@@ -18,12 +18,15 @@ build :
 	mkdir -p makecapk/assets
 	cp ../rawdraw_android makecapk/lib/arm64-v8a/libmakecapk.so
 	rm -rf temp.apk
-	~/Android/Sdk/build-tools/28.0.3/aapt package -f -F temp.apk -I ~/Android/Sdk/platforms/android-24/android.jar -M AndroidManifest.xml -S Sources/res -v --target-sdk-version 24
+	~/Android/Sdk/build-tools/28.0.3/aapt package -f -F temp.apk -I ~/Android/Sdk/platforms/android-24/android.jar -M AndroidManifest.xml -v --target-sdk-version 24
+	#Note: If you want to cut corners, you don't actually need any resource files. Replace android:label="@string/app_name" and add a resource file.  # -S Sources/res
 	unzip -o temp.apk -d makecapk
 	rm -rf makecapk.apk
 	cd makecapk && zip -D9r ../makecapk.apk .
+	ls -l makecapk.apk
 	zipalign -c -v 4 makecapk.apk
 	jarsigner -sigalg SHA1withRSA -digestalg SHA1 -verbose -keystore $(KEYSTOREFILE) -storepass $(KEYPASSWORD) makecapk.apk $(ALIASNAME)
+	ls -l makecapk.apk
 	#jarsigner -verify -verbose -certs makecapk.apk
 
 uninstall : 
