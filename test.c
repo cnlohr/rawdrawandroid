@@ -1,37 +1,60 @@
-//Copyright (c) 2011 <>< Charles Lohr - Under the MIT/x11 or NewBSD License you choose.
+//Copyright (c) 2011-2019 <>< Charles Lohr - Under the MIT/x11 or NewBSD License you choose.
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include "CNFGFunctions.h"
 #include "os_generic.h"
 #include "CNFG3D.h"
 #include <GLES3/gl3.h>
-
+#include <asset_manager.h>
+#include <asset_manager_jni.h>
+#include <android_native_app_glue.h>
+#include <android/log.h>
 
 unsigned frames = 0;
 unsigned long iframeno = 0;
 
+void AndroidDisplayKeyboard(int pShow);
+
+int lastbuttonx = 0;
+int lastbuttony = 0;
+int lastmotionx = 0;
+int lastmotiony = 0;
+int lastbid = 0;
+int lastmask = 0;
+int lastkey, lastkeydown;
+
 void HandleKey( int keycode, int bDown )
 {
-	if( keycode == 65307 ) exit( 0 );
-	printf( "Key: %d -> %d\n", keycode, bDown );
+	lastkey = keycode;
+	lastkeydown = bDown;
 }
 
 void HandleButton( int x, int y, int button, int bDown )
 {
-	printf( "Button: %d,%d (%d) -> %d\n", x, y, button, bDown );
+	static int keyboard_up;
+	lastbid = button;
+	lastbuttonx = x;
+	lastbuttony = y;
+
+	if( bDown ) { keyboard_up = !keyboard_up; AndroidDisplayKeyboard( keyboard_up ); }
 }
 
 void HandleMotion( int x, int y, int mask )
 {
-//	printf( "Motion: %d,%d (%d)\n", x, y, mask );
+	lastmask = mask;
+	lastmotionx = x;
+	lastmotiony = y;
 }
 
 #define HMX 132
 #define HMY 132
 short screenx, screeny;
 float Heightmap[HMX*HMY];
+
+extern struct android_app * gapp;
 
 void DrawHeightmap()
 {
@@ -45,12 +68,14 @@ void DrawHeightmap()
 
 	tdMode( tdPROJECTION );
 	tdIdentity( gSMatrix );
-	tdPerspective( 40, ((float)screenx)/((float)screeny), .1, 200., gSMatrix );
+	tdPerspective( 30, ((float)screenx)/((float)screeny), .1, 200., gSMatrix );
 
 	tdMode( tdMODELVIEW );
 	tdIdentity( gSMatrix );
 	tdTranslate( gSMatrix, 0, 0, -40 );
 	tdLookAt( gSMatrix, eye, at, up );
+
+	float scale = 60./HMX;
 
 	for( x = 0; x < HMX-1; x++ )
 	for( y = 0; y < HMY-1; y++ )
@@ -63,20 +88,21 @@ void DrawHeightmap()
 		float ptd[3];
 
 		float normal[3];
-		float lightdir[3] = { 1, -1, 1 };
+		float lightdir[3] = { .6, -.6, 1 };
 		float tmp1[3];
 		float tmp2[3];
 
 		RDPoint pto[6];
 
-		pta[0] = tx+0; pta[1] = ty+0; pta[2] = Heightmap[(x+0)+(y+0)*HMX];
-		ptb[0] = tx+1; ptb[1] = ty+0; ptb[2] = Heightmap[(x+1)+(y+0)*HMX];
-		ptc[0] = tx+0; ptc[1] = ty+1; ptc[2] = Heightmap[(x+0)+(y+1)*HMX];
-		ptd[0] = tx+1; ptd[1] = ty+1; ptd[2] = Heightmap[(x+1)+(y+1)*HMX];
+		pta[0] = (tx+0)*scale; pta[1] = (ty+0)*scale; pta[2] = Heightmap[(x+0)+(y+0)*HMX]*scale;
+		ptb[0] = (tx+1)*scale; ptb[1] = (ty+0)*scale; ptb[2] = Heightmap[(x+1)+(y+0)*HMX]*scale;
+		ptc[0] = (tx+0)*scale; ptc[1] = (ty+1)*scale; ptc[2] = Heightmap[(x+0)+(y+1)*HMX]*scale;
+		ptd[0] = (tx+1)*scale; ptd[1] = (ty+1)*scale; ptd[2] = Heightmap[(x+1)+(y+1)*HMX]*scale;
 
 		tdPSub( pta, ptb, tmp2 );
 		tdPSub( ptc, ptb, tmp1 );
 		tdCross( tmp1, tmp2, normal );
+		tdNormalizeSelf( normal );
 
 		tdFinalPoint( pta, pta );
 		tdFinalPoint( ptb, ptb );
@@ -93,17 +119,6 @@ void DrawHeightmap()
 		if( ptc[2] < 0 ) continue;
 		if( ptd[2] < 0 ) continue;
 
-/*		if( pta[3] < -1 ) continue;
-		if( ptb[3] < -1 ) continue;
-		if( ptc[3] < -1 ) continue;
-		if( ptd[3] < -1 ) continue;
-*/
-
-//		if( pta[2] < 0 ) continue;
-//		if( ptb[2] < 0 ) continue;
-//		if( ptc[2] < 0 ) continue;
-//		if( ptd[2] < 0 ) continue;
-
 		pto[0].x = pta[0]; pto[0].y = pta[1];
 		pto[1].x = ptb[0]; pto[1].y = ptb[1];
 		pto[2].x = ptd[0]; pto[2].y = ptd[1];
@@ -116,35 +131,13 @@ void DrawHeightmap()
 
 		float bright = tdDot( normal, lightdir );
 		if( bright < 0 ) bright = 0;
-		CNFGColor( (int)( bright * 50 ) );
+		CNFGColor( (int)( bright * 90 ) );
 
 //		CNFGTackPoly( &pto[0], 3 );		CNFGTackPoly( &pto[3], 3 );
-
-
 		CNFGTackSegment( pta[0], pta[1], ptb[0], ptb[1] );
-//		CNFGTackSegment( ptb[0], ptb[1], ptc[0], ptc[1] );
-//		CNFGTackSegment( ptc[0], ptc[1], ptd[0], ptd[1] );
-//		CNFGTackSegment( ptd[0], ptd[1], pta[0], pta[1] );
 		CNFGTackSegment( pta[0], pta[1], ptc[0], ptc[1] );
-//		CNFGTackSegment( ptd[0], ptd[1], ptb[0], ptb[1] );
-		
+	
 	}
- 
-/*
-	for( f = 0; f <= 6.28; f+=0.01 )
-	{
-		tdPSet( pta, cos( f ), sin(f), cos( f * 10. + ThisTime) );
-		tdPSet( ptb, cos( f - 0.01 ), sin(f - 0.01), cos( (f-0.01) * 10. + ThisTime) );
-	//			printf( "(%f, %f, %f) -> ", pta[0], pta[1], pta[2] );
-		tdFinalPoint( pta, pta );
-		tdFinalPoint( ptb, ptb );
-	//			printf( "%f, %f, %f\n", pta[0], pta[1], pta[2] );
-		CNFGTackSegment( pta[0], pta[1], ptb[0], ptb[1] );
-	}
-
-*/
-
-
 }
 
 
@@ -154,6 +147,17 @@ void HandleDestroy()
 	exit(10);
 }
 
+volatile int suspended;
+
+void HandleSuspend()
+{
+	suspended = 1;
+}
+
+void HandleResume()
+{
+	suspended = 0;
+}
 
 int main()
 {
@@ -166,13 +170,24 @@ int main()
 
 	CNFGBGColor = 0x800000;
 	CNFGDialogColor = 0x444444;
-	CNFGSetup( "Test Bench", 640, 480 );
-	// CNFGSetupFullscreen( "Test Bench", 0 );
+	CNFGSetupFullscreen( "Test Bench", 0 );
 
 	for( x = 0; x < HMX; x++ )
 	for( y = 0; y < HMY; y++ )
 	{
 		Heightmap[x+y*HMX] = tdPerlin2D( x, y )*8.;
+	}
+
+
+	const char * assettext = "Not Found";
+	AAsset * file = AAssetManager_open( gapp->activity->assetManager, "asset.txt", AASSET_MODE_BUFFER );
+	if( file )
+	{
+		size_t fileLength = AAsset_getLength(file);
+		char * temp = malloc( fileLength + 1);
+		memcpy( temp, AAsset_getBuffer( file ), fileLength );
+		temp[fileLength] = 0;
+		assettext = temp;
 	}
 
 	while(1)
@@ -184,6 +199,8 @@ int main()
 
 		CNFGHandleInput();
 
+		if( suspended ) { usleep(50000); continue; }
+
 		CNFGClearFrame();
 		CNFGColor( 0xFFFFFF );
 		CNFGGetDimensions( &screenx, &screeny );
@@ -191,21 +208,18 @@ int main()
 		// Mesh in background
 		glLineWidth( 10.0 );
 		DrawHeightmap();
+		CNFGPenX = 0; CNFGPenY = 400;
+		CNFGColor( 0xffffff );
+		CNFGDrawText( assettext, 15 );
 		void FlushRender();
 		FlushRender();
+
+		CNFGPenX = 0; CNFGPenY = 480;
+		char st[50];
+		sprintf( st, "%dx%d %d %d %d %d %d %d\n%d %d\n", screenx, screeny, lastbuttonx, lastbuttony, lastmotionx, lastmotiony, lastkey, lastkeydown, lastbid, lastmask );
+		CNFGDrawText( st, 10 );
 		glLineWidth( 2.0 );
-/*
 
-		pto[0].x = 100;
-		pto[0].y = 100;
-		pto[1].x = 200;
-		pto[1].y = 100;
-		pto[2].x = 100;
-		pto[2].y = 200;
-		CNFGTackPoly( &pto[0], 3 );
-
-		CNFGColor( 0xFF00FF );
-*/
 
 /*		CNFGTackSegment( pto[0].x, pto[0].y, pto[1].x, pto[1].y );
 		CNFGTackSegment( pto[1].x, pto[1].y, pto[2].x, pto[2].y );
