@@ -19,6 +19,9 @@ static const char* kTAG = KTAG(APPNAME);
 #define LOGI(...)  ((void)__android_log_print(ANDROID_LOG_INFO, kTAG, __VA_ARGS__))
 #define printf( x...) LOGI( x )
 
+float mountainangle;
+float mountainoffsetx;
+float mountainoffsety;
 
 ASensorManager * sm;
 const ASensor * as;
@@ -26,11 +29,11 @@ ASensorEventQueue* aeq;
 ALooper * l;
 
 
-void SetupAccelerometer()
+void SetupIMU()
 {
 	sm = ASensorManager_getInstance();
 	printf( "SM: %p\n", sm );
-	as = ASensorManager_getDefaultSensor( sm, ASENSOR_TYPE_ACCELEROMETER );
+	as = ASensorManager_getDefaultSensor( sm, ASENSOR_TYPE_GYROSCOPE );
 	printf( "AS: %p\n", as );
 	l = ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
 	printf( "L: %p\n", l );
@@ -50,9 +53,12 @@ void AccCheck()
 	{
 		ssize_t s = ASensorEventQueue_getEvents( aeq, &evt, 1 );
 		if( s <= 0 ) break;
-		accx = evt.acceleration.v[0];
-		accy = evt.acceleration.v[1];
-		accz = evt.acceleration.v[2];
+		accx = evt.vector.v[0];
+		accy = evt.vector.v[1];
+		accz = evt.vector.v[2];
+		mountainangle /*degrees*/ -= accz;// * 3.1415 / 360.0;// / 100.0;
+		mountainoffsety += accy;
+		mountainoffsetx += accx;
 		accs++;
 	} while( 1 );
 }
@@ -105,8 +111,15 @@ extern struct android_app * gapp;
 void DrawHeightmap()
 {
 	int x, y;
-	float fdt = ((iframeno++)%(360*10))/10.0;
-	float eye[3] = { (float)sin(fdt*(3.14159/180.0))*30, (float)cos(fdt*(3.14159/180.0))*30, 30 };
+	//float fdt = ((iframeno++)%(360*10))/10.0;
+
+	mountainangle += .2;
+	if( mountainangle < 0 ) mountainangle += 360;
+	if( mountainangle > 360 ) mountainangle -= 360;
+
+	mountainoffsety = mountainoffsety - ((mountainoffsety-100) * .1);
+
+	float eye[3] = { (float)sin(mountainangle*(3.14159/180.0))*30*sin(mountainoffsety/100.), (float)cos(mountainangle*(3.14159/180.0))*30*sin(mountainoffsety/100.), 30*cos(mountainoffsety/100.) };
 	float at[3] = { 0,0, 0 };
 	float up[3] = { 0,0, 1 };
 
@@ -236,7 +249,7 @@ int main()
 		temp[fileLength] = 0;
 		assettext = temp;
 	}
-	SetupAccelerometer();
+	SetupIMU();
 
 	while(1)
 	{
