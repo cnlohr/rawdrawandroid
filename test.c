@@ -12,6 +12,50 @@
 #include <asset_manager_jni.h>
 #include <android_native_app_glue.h>
 #include <android/log.h>
+#include <android/sensor.h>
+
+#define KTAG( x ) #x
+static const char* kTAG = KTAG(APPNAME);
+#define LOGI(...)  ((void)__android_log_print(ANDROID_LOG_INFO, kTAG, __VA_ARGS__))
+#define printf( x...) LOGI( x )
+
+
+ASensorManager * sm;
+const ASensor * as;
+ASensorEventQueue* aeq;
+ALooper * l;
+
+
+void SetupAccelerometer()
+{
+	sm = ASensorManager_getInstance();
+	printf( "SM: %p\n", sm );
+	as = ASensorManager_getDefaultSensor( sm, ASENSOR_TYPE_ACCELEROMETER );
+	printf( "AS: %p\n", as );
+	l = ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
+	printf( "L: %p\n", l );
+	aeq = ASensorManager_createEventQueue( sm, &l, 0, 0, 0 );
+	printf( "AEQ: %p\n", aeq );
+	ASensorEventQueue_enableSensor( aeq, as);
+	printf( "setEvent Rate: %d\n", ASensorEventQueue_setEventRate( aeq, as, 10000 ) );
+}
+
+float accx, accy, accz;
+int accs;
+
+void AccCheck()
+{
+	ASensorEvent evt;
+	do
+	{
+		ssize_t s = ASensorEventQueue_getEvents( aeq, &evt, 1 );
+		if( s <= 0 ) break;
+		accx = evt.acceleration.v[0];
+		accy = evt.acceleration.v[1];
+		accz = evt.acceleration.v[2];
+		accs++;
+	} while( 1 );
+}
 
 unsigned frames = 0;
 unsigned long iframeno = 0;
@@ -51,8 +95,8 @@ void HandleMotion( int x, int y, int mask )
 	lastmotiony = y;
 }
 
-#define HMX 132
-#define HMY 132
+#define HMX 162
+#define HMY 162
 short screenx, screeny;
 float Heightmap[HMX*HMY];
 
@@ -171,7 +215,7 @@ int main()
 	double SecToWait;
 	int linesegs = 0;
 
-	CNFGBGColor = 0x800000;
+	CNFGBGColor = 0x400000;
 	CNFGDialogColor = 0x444444;
 	CNFGSetupFullscreen( "Test Bench", 0 );
 
@@ -192,6 +236,7 @@ int main()
 		temp[fileLength] = 0;
 		assettext = temp;
 	}
+	SetupAccelerometer();
 
 	while(1)
 	{
@@ -201,6 +246,7 @@ int main()
 		RDPoint pto[3];
 
 		CNFGHandleInput();
+		AccCheck();
 
 		if( suspended ) { usleep(50000); continue; }
 
@@ -209,7 +255,7 @@ int main()
 		CNFGGetDimensions( &screenx, &screeny );
 
 		// Mesh in background
-		glLineWidth( 10.0 );
+		glLineWidth( 9.0 );
 		DrawHeightmap();
 		CNFGPenX = 0; CNFGPenY = 400;
 		CNFGColor( 0xffffff );
@@ -219,7 +265,7 @@ int main()
 
 		CNFGPenX = 0; CNFGPenY = 480;
 		char st[50];
-		sprintf( st, "%dx%d %d %d %d %d %d %d\n%d %d\n", screenx, screeny, lastbuttonx, lastbuttony, lastmotionx, lastmotiony, lastkey, lastkeydown, lastbid, lastmask );
+		sprintf( st, "%dx%d %d %d %d %d %d %d\n%d %d\n%5.2f %5.2f %5.2f %d", screenx, screeny, lastbuttonx, lastbuttony, lastmotionx, lastmotiony, lastkey, lastkeydown, lastbid, lastmask, accx, accy, accz, accs );
 		CNFGDrawText( st, 10 );
 		glLineWidth( 2.0 );
 
@@ -230,7 +276,7 @@ int main()
 */
 
 		// Square behind text
-		CNFGDrawBox( 0, 0, 260, 260 );
+		CNFGDrawBox( 600, 0, 950, 350);
 
 		CNFGPenX = 10; CNFGPenY = 10;
 
@@ -245,9 +291,9 @@ int main()
 			{
 				tw[0] = c;
 
-				CNFGPenX = ( c % 16 ) * 16+5;
-				CNFGPenY = ( c / 16 ) * 16+5;
-				CNFGDrawText( tw, 2 );
+				CNFGPenX = ( c % 16 ) * 20+606;
+				CNFGPenY = ( c / 16 ) * 20+5;
+				CNFGDrawText( tw, 4 );
 			}
 		}
 

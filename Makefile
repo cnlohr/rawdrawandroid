@@ -62,7 +62,7 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(SRCS)
 #We're really cutting corners.  You should probably use resource files.. Replace android:label="@string/app_name" and add a resource file.
 #Then do this -S Sources/res on the aapt line.
 
-TARGETS:=makecapk/lib/arm64-v8a/lib$(APPNAME).so # makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
+TARGETS:=makecapk/lib/arm64-v8a/lib$(APPNAME).so #makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
 
 makecapk.apk : $(TARGETS)
 	mkdir -p makecapk/assets
@@ -81,7 +81,7 @@ makecapk.apk : $(TARGETS)
 uninstall : 
 	(adb uninstall $(PACKAGENAME))||true
 
-push : uninstall makecapk.apk
+push : makecapk.apk
 	echo "Installing" $(PACKAGENAME)
 	adb install makecapk.apk
 
