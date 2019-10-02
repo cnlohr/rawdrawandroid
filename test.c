@@ -26,15 +26,17 @@ int lastbid = 0;
 int lastmask = 0;
 int lastkey, lastkeydown;
 
+static int keyboard_up;
+
 void HandleKey( int keycode, int bDown )
 {
 	lastkey = keycode;
 	lastkeydown = bDown;
+	if( keycode == 10 && !bDown ) { keyboard_up = 0; AndroidDisplayKeyboard( keyboard_up );  }
 }
 
 void HandleButton( int x, int y, int button, int bDown )
 {
-	static int keyboard_up;
 	lastbid = button;
 	lastbuttonx = x;
 	lastbuttony = y;
@@ -136,6 +138,7 @@ void DrawHeightmap()
 //		CNFGTackPoly( &pto[0], 3 );		CNFGTackPoly( &pto[3], 3 );
 		CNFGTackSegment( pta[0], pta[1], ptb[0], ptb[1] );
 		CNFGTackSegment( pta[0], pta[1], ptc[0], ptc[1] );
+		CNFGTackSegment( ptb[0], ptb[1], ptc[0], ptc[1] );
 	
 	}
 }

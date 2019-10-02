@@ -7,15 +7,19 @@ PACKAGENAME:=org.yourorg.$(APPNAME)
 
 ANDROIDVERSION:=24
 SDK:=$$HOME/Android/Sdk
-NDK:=$(SDK)/ndk-bundle
-CFLAGS:=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=$(appname)
-CFLAGS+= -Irawdraw -I$(NDK)/sources/android/native_app_glue -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC
-LDFLAGS:= -lm -Ltoolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -u ANativeActivity_onCreate -landroid -llog
-LDFLAGS += -shared -s
+NDK:=$(SDK)/ndk/20.0.5594570
+BUILD_TOOLS:=$(SDK)/build-tools/29.0.2
+
+CFLAGS:=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=$(APPNAME)
+CFLAGS+= -Irawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I.
+LDFLAGS:= -lm -Ltoolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
+LDFLAGS += -shared -s -uANativeActivity_onCreate
+
 CC_ARM32:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$(ANDROIDVERSION)-clang
 CC_ARM64:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$(ANDROIDVERSION)-clang
 CC_x86:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android$(ANDROIDVERSION)-clang
 CC_x86_64=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android$(ANDROIDVERSION)-clang
+AAPT:=$(BUILD_TOOLS)/aapt
 
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp
@@ -26,7 +30,7 @@ KEYPASSWORD:=password
 DNAME:="CN=example.com, OU=ID, O=Example, L=Doe, S=John, C=GB"
 KEYSTOREFILE:=my-release-key.keystore
 ALIASNAME:=alias_name
-SRCS:= test.c rawdraw/CNFGFunctions.c rawdraw/CNFGEGLDriver.c rawdraw/CNFG3D.c ~/Android/Sdk/ndk-bundle/sources/android/native_app_glue/android_native_app_glue.c
+SRCS:= test.c rawdraw/CNFGFunctions.c rawdraw/CNFGEGLDriver.c rawdraw/CNFG3D.c android_native_app_glue.c
 
 keystore : $(KEYSTOREFILE)
 
@@ -39,15 +43,15 @@ folders:
 	mkdir -p makecapk/lib/x86
 	mkdir -p makecapk/lib/x86_64
 
-makecapk/lib/arm64-v8a/lib$(APPNAME).so : test.c rawdraw/CNFGFunctions.c rawdraw/CNFGEGLDriver.c rawdraw/CNFG3D.c ~/Android/Sdk/ndk-bundle/sources/android/native_app_glue/android_native_app_glue.c
+makecapk/lib/arm64-v8a/lib$(APPNAME).so : $(SRCS)
 	mkdir -p makecapk/lib/arm64-v8a
 	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ $(LDFLAGS)
 
-makecapk/lib/armeabi-v7a/lib$(APPNAME).so : test.c rawdraw/CNFGFunctions.c rawdraw/CNFGEGLDriver.c rawdraw/CNFG3D.c ~/Android/Sdk/ndk-bundle/sources/android/native_app_glue/android_native_app_glue.c
+makecapk/lib/armeabi-v7a/lib$(APPNAME).so : $(SRCS)
 	mkdir -p makecapk/lib/armeabi-v7a
 	$(CC_ARM64) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ $(LDFLAGS)
 
-makecapk/lib/x86/lib$(APPNAME).so : test.c rawdraw/CNFGFunctions.c rawdraw/CNFGEGLDriver.c rawdraw/CNFG3D.c ~/Android/Sdk/ndk-bundle/sources/android/native_app_glue/android_native_app_glue.c
+makecapk/lib/x86/lib$(APPNAME).so : $(SRCS)
 	mkdir -p makecapk/lib/x86
 	$(CC_x86) $(CFLAGS) $(CFLAGS_x86) -o $@ $^ $(LDFLAGS)
 
@@ -58,11 +62,13 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(SRCS)
 #We're really cutting corners.  You should probably use resource files.. Replace android:label="@string/app_name" and add a resource file.
 #Then do this -S Sources/res on the aapt line.
 
-makecapk.apk : makecapk/lib/arm64-v8a/lib$(APPNAME).so makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
+TARGETS:=makecapk/lib/arm64-v8a/lib$(APPNAME).so # makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
+
+makecapk.apk : $(TARGETS)
 	mkdir -p makecapk/assets
 	echo "Test asset file" > makecapk/assets/asset.txt
 	rm -rf temp.apk
-	aapt package -f -F temp.apk -I ~/Android/Sdk/platforms/android-$(ANDROIDVERSION)/android.jar -M AndroidManifest.xml -A makecapk/assets -v --target-sdk-version $(ANDROIDVERSION)
+	$(AAPT) package -f -F temp.apk -I $(SDK)/platforms/android-$(ANDROIDVERSION)/android.jar -M AndroidManifest.xml -A makecapk/assets -v --target-sdk-version $(ANDROIDVERSION)
 	unzip -o temp.apk -d makecapk
 	rm -rf makecapk.apk
 	cd makecapk && zip -D9r ../makecapk.apk .
@@ -80,7 +86,7 @@ push : uninstall makecapk.apk
 	adb install makecapk.apk
 
 run : push
-	$(eval ACTIVITYNAME:=$(shell aapt dump badging makecapk.apk | grep "launchable-activity" | cut -f 2 -d"'"))
+	$(eval ACTIVITYNAME:=$(shell $(AAPT) dump badging makecapk.apk | grep "launchable-activity" | cut -f 2 -d"'"))
 	adb shell am start -n $(PACKAGENAME)/$(ACTIVITYNAME)
 
 clean :
