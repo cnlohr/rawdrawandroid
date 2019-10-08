@@ -20,3 +20,36 @@ Step 8: Download this repo
 ```
 	# git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
 ```
+
+
+TODO:
+
+Try a bunch of these cool priveleges, see what they all do.
+* permission.ACCESS
+* permission.INTERNET
+* permission.HIDE_NON_SYSTEM_OVERLAY_WINDOWS
+* permission.ACCESS_NETWORK_STATE
+* permission.WRITE_EXTERNAL_STORAGE
+* permission.READ_PHONE_STATE
+* permission.GET_TASKS
+* permission.REORDER_TASKS
+* permission.WRITE_APN_SETTINGS
+* permission.READ_SECURE_SETTINGS
+* permission.READ_SETTINGS
+* permission.REAL_GET_TASKS
+* permission.INTERACT_ACROSS_USERS
+* permission.MANAGE_USERS
+* permission.INSTALL_PACKAGES
+* permission.DELETE_PACKAGES
+* permission.INTERACT_ACROSS_USERS_FULL
+* permission.READ_MEDIA_STORAGE
+* permission.WRITE_MEDIA_STORAGE
+* android.permission.VR
+* android.permission.INSTALL_PACKAGES
+
+
+
+
+
+
+
