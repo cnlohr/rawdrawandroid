@@ -7,8 +7,10 @@ PACKAGENAME:=org.yourorg.$(APPNAME)
 
 ANDROIDVERSION:=24
 SDK:=$$HOME/Android/Sdk
-NDK:=$(SDK)/ndk/20.0.5594570
-BUILD_TOOLS:=$(SDK)/build-tools/29.0.2
+#NDK:=$(SDK)/ndk/20.0.5594570
+#BUILD_TOOLS:=$(SDK)/build-tools/29.0.2
+NDK:=$(SDK)/ndk-bundle
+BUILD_TOOLS:=$(SDK)/build-tools/28.0.3
 
 CFLAGS:=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=$(APPNAME)
 CFLAGS+= -Irawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I.

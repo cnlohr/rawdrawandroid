@@ -37,7 +37,7 @@ void SetupIMU()
 	printf( "AS: %p\n", as );
 	l = ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
 	printf( "L: %p\n", l );
-	aeq = ASensorManager_createEventQueue( sm, &l, 0, 0, 0 );
+	aeq = ASensorManager_createEventQueue( sm, (ALooper*)&l, 0, 0, 0 ); //XXX??!?! This looks wrong.
 	printf( "AEQ: %p\n", aeq );
 	ASensorEventQueue_enableSensor( aeq, as);
 	printf( "setEvent Rate: %d\n", ASensorEventQueue_setEventRate( aeq, as, 10000 ) );
@@ -219,6 +219,8 @@ void HandleResume()
 	suspended = 0;
 }
 
+uint32_t randomtexturedata[256*256];
+
 int main()
 {
 	int i, x, y;
@@ -319,14 +321,20 @@ int main()
 			RDPoint pp[3];
 			CNFGColor( 0x00FF00 );
 			pp[0].x = (short)(50*sin((float)(i+iframeno)*.01) + (i%20)*30);
-			pp[0].y = (short)(50*cos((float)(i+iframeno)*.01) + (i/20)*20);
+			pp[0].y = (short)(50*cos((float)(i+iframeno)*.01) + (i/20)*20)+700;
 			pp[1].x = (short)(20*sin((float)(i+iframeno)*.01) + (i%20)*30);
-			pp[1].y = (short)(50*cos((float)(i+iframeno)*.01) + (i/20)*20);
+			pp[1].y = (short)(50*cos((float)(i+iframeno)*.01) + (i/20)*20)+700;
 			pp[2].x = (short)(10*sin((float)(i+iframeno)*.01) + (i%20)*30);
-			pp[2].y = (short)(30*cos((float)(i+iframeno)*.01) + (i/20)*20);
+			pp[2].y = (short)(30*cos((float)(i+iframeno)*.01) + (i/20)*20)+700;
 			CNFGTackPoly( pp, 3 );
 		}
 
+		int x, y;
+		for( y = 0; y < 256; y++ )
+		for( x = 0; x < 256; x++ )
+			randomtexturedata[x+y*256] = rand();
+
+		CNFGUpdateScreenWithBitmap( randomtexturedata, 256, 256 );
 
 		frames++;
 		CNFGSwapBuffers();
