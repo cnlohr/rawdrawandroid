@@ -5,6 +5,10 @@ packages just to do the most basic of things.  Well, this is a demo of how
 to make your own APKs and build, install and automatically run them in about
 2 seconds, and with an apk size of about 25kB.
 
+Note that this project, as it is will not build apps ready for the app store,
+as it only targets arm64-v8a, and it is missing things like icon support,
+etc.  But, it is a start!
+
 With this framework you get:
  * To make a window
  * Accelerometer/gyro input
