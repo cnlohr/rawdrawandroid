@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">TESTVR</string>
+    <string name="app_name">cnfgtest</string>
+    <string name="lib_name">cnfgtest</string>
+    <string name="package_name">org.yourorg.cnfgtest</string>
 </resources>
+

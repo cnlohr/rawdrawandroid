@@ -33,6 +33,9 @@ CC_x86:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android$(A
 CC_x86_64=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android$(ANDROIDVERSION)-clang
 AAPT:=$(BUILD_TOOLS)/aapt
 
+# Which binaries to build?
+TARGETS:=makecapk/lib/arm64-v8a/lib$(APPNAME).so #makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
+
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp
 CFLAGS_x86:=-march=i686 -mtune=intel -mssse3 -mfpmath=sse -m32
@@ -72,22 +75,27 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(SRCS)
 
 #We're really cutting corners.  You should probably use resource files.. Replace android:label="@string/app_name" and add a resource file.
 #Then do this -S Sources/res on the aapt line.
+#For icon support, add -S makecapk/res to the aapt line.  also,  android:icon="@mipmap/icon" to your application line in the manifest.
+#If you want to strip out about 800 bytes of data you can remove the icon and strings.
 
-TARGETS:=makecapk/lib/arm64-v8a/lib$(APPNAME).so #makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
+#Notes for the past:  These lines used to work, but don't seem to anymore.  Switched to newer jarsigner.
+#(zipalign -c -v 8 makecapk.apk)||true #This seems to not work well.
+#jarsigner -verify -verbose -certs makecapk.apk
+
+
 
 makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
 	mkdir -p makecapk/assets
 	echo "Test asset file" > makecapk/assets/asset.txt
 	rm -rf temp.apk
-	$(AAPT) package -f -F temp.apk -I $(SDK)/platforms/android-$(ANDROIDVERSION)/android.jar -M AndroidManifest.xml -A makecapk/assets -v --target-sdk-version $(ANDROIDVERSION)
+	$(AAPT) package -f -F temp.apk -I $(SDK)/platforms/android-$(ANDROIDVERSION)/android.jar -M AndroidManifest.xml -S Sources/res -A makecapk/assets -v --target-sdk-version $(ANDROIDVERSION)
 	unzip -o temp.apk -d makecapk
 	rm -rf makecapk.apk
 	cd makecapk && zip -D9r ../makecapk.apk .
 	ls -l makecapk.apk
 	jarsigner -sigalg SHA1withRSA -digestalg SHA1 -verbose -keystore $(KEYSTOREFILE) -storepass $(KEYPASSWORD) makecapk.apk $(ALIASNAME)
-	#(zipalign -c -v 8 makecapk.apk)||true #This seems to not work well.
-	#jarsigner -verify -verbose -certs makecapk.apk
 	ls -l makecapk.apk
+
 
 uninstall : 
 	(adb uninstall $(PACKAGENAME))||true

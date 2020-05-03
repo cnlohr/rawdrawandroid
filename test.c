@@ -31,13 +31,9 @@ ALooper * l;
 void SetupIMU()
 {
 	sm = ASensorManager_getInstance();
-	printf( "SM: %p\n", sm );
 	as = ASensorManager_getDefaultSensor( sm, ASENSOR_TYPE_GYROSCOPE );
-	printf( "AS: %p\n", as );
 	l = ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
-	printf( "L: %p\n", l );
 	aeq = ASensorManager_createEventQueue( sm, (ALooper*)&l, 0, 0, 0 ); //XXX??!?! This looks wrong.
-	printf( "AEQ: %p\n", aeq );
 	ASensorEventQueue_enableSensor( aeq, as);
 	printf( "setEvent Rate: %d\n", ASensorEventQueue_setEventRate( aeq, as, 10000 ) );
 }
