@@ -336,7 +336,7 @@ int main()
 		CNFGUpdateScreenWithBitmap( randomtexturedata, 256, 256 );
 
 		frames++;
-		CNFGSwapBuffers();
+		//On Android, CNFGSwapBuffers must be called, and CNFGUpdateScreenWithBitmap does not have an implied framebuffer swap.
 
 		ThisTime = OGGetAbsoluteTime();
 		if( ThisTime > LastFPSTime + 1 )
@@ -347,10 +347,7 @@ int main()
 			LastFPSTime+=1;
 		}
 
-		SecToWait = .016 - ( ThisTime - LastFrameTime );
-		LastFrameTime += .016;
-		if( SecToWait > 0 )
-			OGUSleep( (int)( SecToWait * 1000000 ) );
+		CNFGSwapBuffers();
 	}
 
 	return(0);
