@@ -5,10 +5,6 @@ packages just to do the most basic of things.  Well, this is a demo of how
 to make your own APKs and build, install and automatically run them in about
 2 seconds, and with an apk size of about 25kB.
 
-Note that this project, as it is will not build apps ready for the app store,
-as it only targets arm64-v8a, and it is missing things like icon support,
-etc.  But, it is a start!
-
 With this framework you get:
  * To make a window
  * Accelerometer/gyro input
@@ -20,7 +16,12 @@ With this framework you get:
 ![Screen Shot](https://github.com/cnlohr/rawdrawandroid/raw/master/screenshot.png)
 
 
-This guide is written around a Linux x64 host.  Though the binaries this
+Note that this project, as it is will not build apps ready for the app store,
+as it only targets arm64-v8a, and it is missing things like icon support,
+etc.  But, it is a start!
+
+This guide is written around a Linux x64 host.  Maybe Windows could be supported
+at some later time, but 🤷.  Though the binaries this
 makes are small, depending on what you're doing you may still need around
 5 GB of HDD space to start the install, though you can delete everything
 but your ~/Android folder.
@@ -47,6 +48,14 @@ Steps:
 ```
 	make push run
 ```
+
+## Example project
+
+An example git submodule is available here:
+
+https://github.com/cnlohr/rawdrawandroidexample
+
+
 
 ## If you are going to use this
 
