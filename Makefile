@@ -1,9 +1,14 @@
+#Copyright (c) 2011-2020 <>< Charles Lohr - Under the MIT/x11 or NewBSD License you choose.
+# NO WARRANTY! NO GUARANTEE OF SUPPORT! USE AT YOUR OWN RISK
+
 all : makecapk.apk 
 
 .PHONY : push run
 
-APPNAME:=cnfgtest
-PACKAGENAME:=org.yourorg.$(APPNAME)
+# WARNING WARNING WARNING!  YOU ABSOLUTELY MUST OVERRIDE THE PROJECT NAME
+# Also, you probably should get your own signature file.
+APPNAME?=cnfgtest
+PACKAGENAME?=org.yourorg.$(APPNAME)
 
 ANDROIDVERSION:=24
 SDK:=$$HOME/Android/Sdk

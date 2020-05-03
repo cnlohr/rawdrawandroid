@@ -28,6 +28,10 @@ Steps:
 	make push run
 ```
 
+## If you are going to use this
+
+ * You probably want to copy-and-paste this project, but, you could probably use it as a submodule.
+ * You *MUST* override the app name.  See in Makefile `APPNAME` - you should be able to include this project's makefile and override that.
 
 ## General note:
  * Be sure to uninstall any previously installed apps which would look like this app.
