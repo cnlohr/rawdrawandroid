@@ -42,9 +42,13 @@ Steps:
 	# git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
 ```
 9) Turn on developer mode on your phone (will vary depending on android version)
-10) Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
-11) Plug your phone into the computer.
-12) Run your program.
+10) Make your own key
+```
+	make keystore
+```
+11) Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
+12) Plug your phone into the computer.
+13) Run your program.
 ```
 	make push run
 ```
@@ -60,12 +64,32 @@ https://github.com/cnlohr/rawdrawandroidexample
 ## If you are going to use this
 
  * You probably want to copy-and-paste this project, but, you could probably use it as a submodule.
- * You *MUST* override the app name.  See in Makefile `APPNAME` - you should be able to include this project's makefile and override that.
+ * You *MUST* override the app name.  See in Makefile `APPNAME` - you should be able to include this project's makefile and override that.  You must also update `AndroidManifest.xml` with whatever name and org you plan to use.
+ * If you are using permission you have to prompt for, you must check if you have it, and if not, prompt the user.  See helper functions below.
+ 
+## Helper functions
 
-## General note:
- * Be sure to uninstall any previously installed apps which would look like this app.
+`struct android_app * gapp;`
+
+`int AndroidHasPermissions(const char* perm_name);`
+
+`void AndroidRequestAppPermissions(const char * perm);`
+
+`void AndroidDisplayKeyboard(int pShow);`
+
+`int AndroidGetUnicodeChar( int keyCode, int metaState );`
+
+`int android_width, android_height;`
+
+Also, above and beyond rawdraw, you *must* implement the following two functions to handle when your apps is suspended or resumed.
+
+`void HandleResume();`
+`void HandleSuspend();`
+
 
 ## protips
+
+ * Be sure to uninstall any previously installed apps which would look like this app, if you have a different build by the same name signed with another key, bad things will happen.
  * You can see your log with:
 ```
 adb logcat
