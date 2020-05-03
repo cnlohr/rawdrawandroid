@@ -1,5 +1,21 @@
 # rawdrawandroid
 
+Ever wanted to write C code and run it on Android?  Sick of multi-megabyte
+packages just to do the most basic of things.  Well, this is a demo of how
+to make your own APKs and build, install and automatically run them in about
+2 seconds, and with an apk size of about 25kB.
+
+With this framework you get:
+ * To make a window
+ * Accelerometer/gyro input
+ * Multi-touch
+ * An android keyboard for key input
+ * OpenGL ES
+ * Ability to store asset files in your APK and read them with `AAssetManager`
+
+![Screen Shot](https://github.com/cnlohr/rawdrawandroid/raw/master/screenshot.png)
+
+
 This guide is written around a Linux x64 host.  Though the binaries this
 makes are small, depending on what you're doing you may still need around
 5 GB of HDD space to start the install, though you can delete everything
