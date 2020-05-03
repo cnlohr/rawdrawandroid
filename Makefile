@@ -11,7 +11,8 @@ APPNAME?=cnfgtest
 PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/rawdraw/CNFGFunctions.c $(RAWDRAWANDROID)/rawdraw/CNFGEGLDriver.c $(RAWDRAWANDROID)/rawdraw/CNFG3D.c $(RAWDRAWANDROID)/android_native_app_glue.c
-SRCS?= test.c $(RAWDRAWANDROIDSRCS)
+EXTRASRC?=test.c
+SRCS:= $(EXTRASRC) $(RAWDRAWANDROIDSRCS)
 
 ANDROIDVERSION:=24
 SDK:=$$HOME/Android/Sdk
@@ -21,9 +22,9 @@ BUILD_TOOLS:=$(SDK)/build-tools/29.0.2
 #NDK:=$(SDK)/ndk-bundle
 #BUILD_TOOLS:=$(SDK)/build-tools/28.0.3
 
-CFLAGS+=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=$(APPNAME)
+CFLAGS+=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=\"$(APPNAME)\"
 CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
-LDFLAGS:= -lm -Ltoolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
+LDFLAGS += -lm -Ltoolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
 LDFLAGS += -shared -s -uANativeActivity_onCreate
 
 CC_ARM32:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$(ANDROIDVERSION)-clang
@@ -74,7 +75,7 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(SRCS)
 
 TARGETS:=makecapk/lib/arm64-v8a/lib$(APPNAME).so #makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
 
-makecapk.apk : $(TARGETS)
+makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
 	mkdir -p makecapk/assets
 	echo "Test asset file" > makecapk/assets/asset.txt
 	rm -rf temp.apk

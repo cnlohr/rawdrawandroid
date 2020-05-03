@@ -65,6 +65,15 @@ https://github.com/cnlohr/rawdrawandroidexample
 ## General note:
  * Be sure to uninstall any previously installed apps which would look like this app.
 
+## protips
+ * You can see your log with:
+```
+adb logcat
+```
+ * If your app opens and closes instantly, try seeing if there are any missing symbols:
+```
+adb logcat | grep UnsatisfiedLinkError
+```
 
 ## TODO
 
