@@ -6,9 +6,12 @@ all : makecapk.apk
 .PHONY : push run
 
 # WARNING WARNING WARNING!  YOU ABSOLUTELY MUST OVERRIDE THE PROJECT NAME
-# Also, you probably should get your own signature file.
+# you should also override these parameters, get your own signatre file and make your own manifest.
 APPNAME?=cnfgtest
 PACKAGENAME?=org.yourorg.$(APPNAME)
+RAWDRAWANDROID?=.
+RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/rawdraw/CNFGFunctions.c $(RAWDRAWANDROID)/rawdraw/CNFGEGLDriver.c $(RAWDRAWANDROID)/rawdraw/CNFG3D.c $(RAWDRAWANDROID)/
+SRCS?= test.c $(RAWDRAWANDROIDSRCS)
 
 ANDROIDVERSION:=24
 SDK:=$$HOME/Android/Sdk
@@ -18,8 +21,8 @@ BUILD_TOOLS:=$(SDK)/build-tools/29.0.2
 #NDK:=$(SDK)/ndk-bundle
 #BUILD_TOOLS:=$(SDK)/build-tools/28.0.3
 
-CFLAGS:=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=$(APPNAME)
-CFLAGS+= -Irawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I.
+CFLAGS+=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=$(APPNAME)
+CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
 LDFLAGS:= -lm -Ltoolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
 LDFLAGS += -shared -s -uANativeActivity_onCreate
 
@@ -38,7 +41,7 @@ KEYPASSWORD:=password
 DNAME:="CN=example.com, OU=ID, O=Example, L=Doe, S=John, C=GB"
 KEYSTOREFILE:=my-release-key.keystore
 ALIASNAME:=alias_name
-SRCS:= test.c rawdraw/CNFGFunctions.c rawdraw/CNFGEGLDriver.c rawdraw/CNFG3D.c android_native_app_glue.c
+android_native_app_glue.c
 
 keystore : $(KEYSTOREFILE)
 
