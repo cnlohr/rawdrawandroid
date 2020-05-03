@@ -10,7 +10,7 @@ all : makecapk.apk
 APPNAME?=cnfgtest
 PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
-RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/rawdraw/CNFGFunctions.c $(RAWDRAWANDROID)/rawdraw/CNFGEGLDriver.c $(RAWDRAWANDROID)/rawdraw/CNFG3D.c $(RAWDRAWANDROID)/
+RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/rawdraw/CNFGFunctions.c $(RAWDRAWANDROID)/rawdraw/CNFGEGLDriver.c $(RAWDRAWANDROID)/rawdraw/CNFG3D.c $(RAWDRAWANDROID)/android_native_app_glue.c
 SRCS?= test.c $(RAWDRAWANDROIDSRCS)
 
 ANDROIDVERSION:=24
@@ -41,7 +41,6 @@ KEYPASSWORD:=password
 DNAME:="CN=example.com, OU=ID, O=Example, L=Doe, S=John, C=GB"
 KEYSTOREFILE:=my-release-key.keystore
 ALIASNAME:=alias_name
-android_native_app_glue.c
 
 keystore : $(KEYSTOREFILE)
 
