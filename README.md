@@ -1,28 +1,39 @@
 # rawdrawandroid
 
 This guide is written around a Linux x64 host.  Though the binaries this
-makes are small, you're still going to need around 5 GB of HDD space to
-start the install, though you can delete everything but your ~/Android
-folder, which should be about 
+makes are small, depending on what you're doing you may still need around
+5 GB of HDD space to start the install, though you can delete everything
+but your ~/Android folder.
 
-Step 1: Install prerequisites:
+Steps:
+1) Install prerequisites:
 ```
 	# sudo apt install openjdk-11-jdk-headless adb
 ```
-Step 2: Download Android Studio: https://developer.android.com/studio
-Step 3: Start 'studio.sh' in android-studio/bin
-Step 4: Let it install the SDK.
-Step 5: Go to sdkmanager ("Configure" button in bottom right)
-Step 6: Probably want to use Android 24, so select that from the list.
-Step 7: Select "SDK Tools" -> "NDK (Side-by-side)"
-
-Step 8: Download this repo
+2) Download Android Studio: https://developer.android.com/studio
+3) Start 'studio.sh' in android-studio/bin
+4) Let it install the SDK.
+5) Go to sdkmanager ("Configure" button in bottom right)
+6) Probably want to use Android 24, so select that from the list.
+7) Select "SDK Tools" -> "NDK (Side-by-side)"
+8) Download this repo
 ```
 	# git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
 ```
+9) Turn on developer mode on your phone (will vary depending on android version)
+10) Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
+11) Plug your phone into the computer.
+12) Run your program.
+```
+	make push run
+```
 
 
-TODO:
+## General note:
+ * Be sure to uninstall any previously installed apps which would look like this app.
+
+
+## TODO
 
 Try a bunch of these cool priveleges, see what they all do.
 * permission.ACCESS
@@ -46,9 +57,6 @@ Try a bunch of these cool priveleges, see what they all do.
 * permission.WRITE_MEDIA_STORAGE
 * android.permission.VR
 * android.permission.INSTALL_PACKAGES
-
-
-
 
 
 

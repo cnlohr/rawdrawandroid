@@ -7,10 +7,11 @@ PACKAGENAME:=org.yourorg.$(APPNAME)
 
 ANDROIDVERSION:=24
 SDK:=$$HOME/Android/Sdk
-#NDK:=$(SDK)/ndk/20.0.5594570
-#BUILD_TOOLS:=$(SDK)/build-tools/29.0.2
-NDK:=$(SDK)/ndk-bundle
-BUILD_TOOLS:=$(SDK)/build-tools/28.0.3
+NDK:=$(SDK)/ndk/20.0.5594570
+BUILD_TOOLS:=$(SDK)/build-tools/29.0.2
+#for older SDKs
+#NDK:=$(SDK)/ndk-bundle
+#BUILD_TOOLS:=$(SDK)/build-tools/28.0.3
 
 CFLAGS:=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=$(APPNAME)
 CFLAGS+= -Irawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I.
@@ -27,7 +28,7 @@ CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp
 CFLAGS_x86:=-march=i686 -mtune=intel -mssse3 -mfpmath=sse -m32
 CFLAGS_x86_64:=-march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=intel
-
+/home/cnlohr/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang:
 KEYPASSWORD:=password
 DNAME:="CN=example.com, OU=ID, O=Example, L=Doe, S=John, C=GB"
 KEYSTOREFILE:=my-release-key.keystore
