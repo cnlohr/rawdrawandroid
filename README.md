@@ -65,7 +65,7 @@ https://github.com/cnlohr/rawdrawandroidexample
 
  * You probably want to copy-and-paste this project, but, you could probably use it as a submodule.
  * You *MUST* override the app name.  See in Makefile `APPNAME` - you should be able to include this project's makefile and override that.  You must also update `AndroidManifest.xml` with whatever name and org you plan to use.
- * If you are using permission you have to prompt for, you must check if you have it, and if not, prompt the user.  See helper functions below.
+ * If you are using permission you have to prompt for, you must both add it to your `AndroidManifest.xml` as well as check if you have it, and if not, prompt the user.  See helper functions below.  You can see an example of this with `sound_android.c` from ColorChord.  https://github.com/cnlohr/colorchord/blob/master/colorchord2/sound_android.c
  
 ## Helper functions
 
