@@ -15,9 +15,7 @@
 #include <android/log.h>
 #include <android/sensor.h>
 
-#define KTAG( x ) #x
-static const char* kTAG = KTAG(APPNAME);
-#define LOGI(...)  ((void)__android_log_print(ANDROID_LOG_INFO, kTAG, __VA_ARGS__))
+#define LOGI(...)  ((void)__android_log_print(ANDROID_LOG_INFO, APPNAME, __VA_ARGS__))
 #define printf( x...) LOGI( x )
 
 float mountainangle;
