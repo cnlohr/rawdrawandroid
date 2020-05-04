@@ -5,12 +5,12 @@ packages just to do the most basic of things.  Well, this is a demo of how
 to make your own APKs and build, install and automatically run them in about
 2 seconds, and with an apk size of about 25kB.
 
-With this framework you get:
+With this framework you get a demo which has:
  * To make a window with OpenGL ES support
- * Accelerometer/gyro input
- * Multi-touch
+ * Accelerometer/gyro input, multi-touch
  * An android keyboard for key input
  * Ability to store asset files in your APK and read them with `AAssetManager`
+ * Permissions support for using things like sound (example in colorchord)
 
 ![Screen Shot](https://github.com/cnlohr/rawdrawandroid/raw/master/screenshot.png)
 
