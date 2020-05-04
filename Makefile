@@ -1,4 +1,4 @@
-#Copyright (c) 2011-2020 <>< Charles Lohr - Under the MIT/x11 or NewBSD License you choose.
+#Copyright (c) 2019-2020 <>< Charles Lohr - Under the MIT/x11 or NewBSD License you choose.
 # NO WARRANTY! NO GUARANTEE OF SUPPORT! USE AT YOUR OWN RISK
 
 all : makecapk.apk 
@@ -14,13 +14,20 @@ RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/rawdraw/CNFGFunctions.c $(RAWDRAWANDROID)/r
 EXTRASRC?=test.c
 SRCS:= $(EXTRASRC) $(RAWDRAWANDROIDSRCS)
 
-ANDROIDVERSION:=24
-SDK:=$(ANDROID_HOME)
-NDK:=$(SDK)/ndk/21.1.6352462
-BUILD_TOOLS:=$(SDK)/build-tools/29.0.3
-#for older SDKs
-#NDK:=$(SDK)/ndk-bundle
-#BUILD_TOOLS:=$(SDK)/build-tools/28.0.3
+ANDROIDVERSION?=24
+
+#if you have a custom Android Home location you can add it to this list.  
+#This makefile will select the first present folder.
+SDK_LOCATIONS+=$(ANDROID_HOME) ~/Android/Sdk
+
+#Just a little Makefile witchcraft to find the first SDK_LOCATION that exists
+#Then find an ndk folder and build tools folder in there.
+ANDROIDSDK?=$(firstword $(foreach dir, $(SDK_LOCATIONS), $(basename $(dir) ) ) )
+NDK?=$(firstword $(wildcard $(ANDROIDSDK)/ndk/*) )
+BUILD_TOOLS?=$(firstword $(wildcard $(ANDROIDSDK)/build-tools/*) )
+
+testsdk :
+	echo $(BUILD_TOOLS)
 
 CFLAGS+=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=\"$(APPNAME)\"
 CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
@@ -88,7 +95,7 @@ makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
 	mkdir -p makecapk/assets
 	echo "Test asset file" > makecapk/assets/asset.txt
 	rm -rf temp.apk
-	$(AAPT) package -f -F temp.apk -I $(SDK)/platforms/android-$(ANDROIDVERSION)/android.jar -M AndroidManifest.xml -S Sources/res -A makecapk/assets -v --target-sdk-version $(ANDROIDVERSION)
+	$(AAPT) package -f -F temp.apk -I $(ANDROIDSDK)/platforms/android-$(ANDROIDVERSION)/android.jar -M AndroidManifest.xml -S Sources/res -A makecapk/assets -v --target-sdk-version $(ANDROIDVERSION)
 	unzip -o temp.apk -d makecapk
 	rm -rf makecapk.apk
 	cd makecapk && zip -D9r ../makecapk.apk .

@@ -6,31 +6,34 @@ to make your own APKs and build, install and automatically run them in about
 2 seconds, and with an apk size of about 25kB.
 
 With this framework you get:
- * To make a window
+ * To make a window with OpenGL ES support
  * Accelerometer/gyro input
  * Multi-touch
  * An android keyboard for key input
- * OpenGL ES
  * Ability to store asset files in your APK and read them with `AAssetManager`
 
 ![Screen Shot](https://github.com/cnlohr/rawdrawandroid/raw/master/screenshot.png)
 
+DISCLAIMER: I take no warranty or responsibility for this code.  Use at your own risk.  I've never released an app on the app store, so there may be some fundamental
+issue with using this toolset to make commercial apps!
 
-Note that this project, as it is will not build apps ready for the app store,
-as it only targets arm64-v8a, and it is missing things like icon support,
-etc.  But, it is a start!
+## Development Environment
 
-This guide is written around a Linux x64 host.  Maybe Windows could be supported
-at some later time, but 🤷.  Though the binaries this
-makes are small, depending on what you're doing you may still need around
-5 GB of HDD space to start the install, though you can delete everything
-but your ~/Android folder.
+Most of the testing was done on Linux, however @AEFeinstein has done at least cursory testing in Windows.
+
+You still need some components of Android studio set up to use this, so it's generally easier to just install
+Android studio completely, but there are instructions on sort of how to do it piecemeal for Windows.
+
+### Windows
 
 If you're developing in Windows Subsystem for Linux (WSL), follow the "Steps for GUI-less install" to install the Android components from the command line, without any GUI components.
 In order to push the APK to your phone, you need `adb` installed in Windows as well, so get that from https://developer.android.com/studio#downloads. Installing the full Android Studio is easier, but you can also get the "Command line tools only" and install `adb` from there.
 Once you have `adb` for Windows, modify this project's `Makefile` to invoke `adb.exe` instead of `adb` in all three places. The `.exe` will invoke the Windows host `adb` instead of the Linux version. That will allow you to upload the APK.
 
-Steps:
+### Linux install Android Studio with NDK.
+
+This set of steps describes how to install Android Studio with NDK support in Linux.  It uses the graphical installer and installs a lot more stuff than the instructions below.  You may be able to mix-and-match these two sets of instructions.  For instance if you are on Linux but don't want to sacrifice 6 GB of disk to the Googs.
+
 1) Install prerequisites:
 ```
 	# sudo apt install openjdk-11-jdk-headless adb
@@ -57,7 +60,7 @@ Steps:
 	make push run
 ```
 
-Steps for GUI-less install:
+### Steps for GUI-less install (Windows)
 1. Install prerequisites:
 ```
 # sudo apt install openjdk-11-jdk-headless adb
@@ -87,21 +90,25 @@ Steps for GUI-less install:
 make push run
 ```
 
-## Example project
-
-An example git submodule is available here:
-
-https://github.com/cnlohr/rawdrawandroidexample
-
-
-
 ## If you are going to use this
-
- * You probably want to copy-and-paste this project, but, you could probably use it as a submodule.
- * You *MUST* override the app name.  See in Makefile `APPNAME` - you should be able to include this project's makefile and override that.  You must also update `AndroidManifest.xml` with whatever name and org you plan to use.
+ * Check out the example here: https://github.com/cnlohr/rawdrawandroidexample
+ * You may want to copy-and-paste this project, but, you could probably use it as a submodule.  You may also want to copy-and-paste the submodule.
+ * You *MUST* override the app name.  See in Makefile `APPNAME` - you should be able to include this project's makefile and override that.  You must also update `AndroidManifest.xml` with whatever name and org you plan to use.  That means updating all three fields. Both `android:name` fields and the `package` field in the header.
  * If you are using permission you have to prompt for, you must both add it to your `AndroidManifest.xml` as well as check if you have it, and if not, prompt the user.  See helper functions below.  You can see an example of this with `sound_android.c` from ColorChord.  https://github.com/cnlohr/colorchord/blob/master/colorchord2/sound_android.c
- 
+  * Be sure to uninstall any previously installed apps which would look like this app, if you have a different build by the same name signed with another key, bad things will happen.
+ * You can see your log with:
+```
+adb logcat
+```
+ * If your app opens and closes instantly, try seeing if there are any missing symbols:
+```
+adb logcat | grep UnsatisfiedLinkError
+```
+
+
 ## Helper functions
+
+Because we are doing this entirelly in the NDK, with the JNI, we won't have the luxury of writing any Java/Kotlin code and calling it.  That means all of the examples online have to be heavily marshalled.  In rawdraw's EGL driver, we have many examples of how to do that.  That said, you can use the following functions which get you most of the way there.
 
 `struct android_app * gapp;`
 
@@ -115,23 +122,14 @@ https://github.com/cnlohr/rawdrawandroidexample
 
 `int android_width, android_height;`
 
+## Departures from regular rawdraw.
+
 Also, above and beyond rawdraw, you *must* implement the following two functions to handle when your apps is suspended or resumed.
 
 `void HandleResume();`
 `void HandleSuspend();`
 
-
-## protips
-
- * Be sure to uninstall any previously installed apps which would look like this app, if you have a different build by the same name signed with another key, bad things will happen.
- * You can see your log with:
-```
-adb logcat
-```
- * If your app opens and closes instantly, try seeing if there are any missing symbols:
-```
-adb logcat | grep UnsatisfiedLinkError
-```
+In addition to that, the syntax of `HandleMotion(...)` is different, in that instead of the `mask` variable being a mask, it is simply updating that specific pointer.
 
 ## TODO
 
