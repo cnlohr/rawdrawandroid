@@ -22,6 +22,10 @@ Becaue sometimes you want to do things that don't fit into the normal way of doi
 
 When you don't fill your build process with hills of beans, you end up being left with the parts that are important, and not the frivilous parts. This makes it easier to develop, deploy, etc, because everything takes much less time.
 
+A little bit of this also has to do to stick it to all those luddites people on the internet who post "that's impossible" or "you're doing it wrong" to Stack Overflow questions... Requesting permissions in the JNI "oh you **have** to do that in Java" or other dumb stuff like that.  I am completely uninterested in your opinions of what is or is not possible.  This is computer science.  There aren't restrictions.  I can do anything I want.  It's just bits.  You don't own me.
+
+P.S. If you want a bunch of examples of how to do a ton of things in C on Android that you "need" java for, scroll to the bottom of this file: https://github.com/cntools/rawdraw/blob/master/CNFGEGLDriver.c - it shows how to use the JNI to marshall a ton of stuff to/from the Android API without needing to jump back into Java/Kotlin land.
+
 # Development Environment
 
 Most of the testing was done on Linux, however @AEFeinstein has done at least cursory testing in Windows.  You still need some components of Android studio set up to use this, so it's generally easier to just install Android studio completely, but there are instructions on sort of how to do it piecemeal for Windows.
