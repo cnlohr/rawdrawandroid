@@ -26,6 +26,10 @@ makes are small, depending on what you're doing you may still need around
 5 GB of HDD space to start the install, though you can delete everything
 but your ~/Android folder.
 
+If you're developing in Windows Subsystem for Linux (WSL), follow the "Steps for GUI-less install" to install the Android components from the command line, without any GUI components.
+In order to push the APK to your phone, you need `adb` installed in Windows as well, so get that from https://developer.android.com/studio#downloads. Installing the full Android Studio is easier, but you can also get the "Command line tools only" and install `adb` from there.
+Once you have `adb` for Windows, modify this project's `Makefile` to invoke `adb.exe` instead of `adb` in all three places. The `.exe` will invoke the Windows host `adb` instead of the Linux version. That will allow you to upload the APK.
+
 Steps:
 1) Install prerequisites:
 ```
@@ -51,6 +55,36 @@ Steps:
 13) Run your program.
 ```
 	make push run
+```
+
+Steps for GUI-less install:
+1. Install prerequisites:
+```
+# sudo apt install openjdk-11-jdk-headless adb
+```
+2. Download "Command line tools only": https://developer.android.com/studio#downloads
+3. Create a folder for the Android SDK and export it. You may want to add that export to your `~/.bashrc`:
+```
+# mkdir ~/android-sdk
+# export ANDROID_HOME=~/android-sdk
+# printf "\nANDROID_HOME=~/android-sdk\n" >> ~/.bashrc
+```
+4. Unzip the "Command line tools only" file so that `tools` is in your brand new `android-sdk` folder.
+5. Install the SDK and NDK components:
+```
+# yes | $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
+# $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;29.0.3" "cmake;3.10.2.4988404" "ndk;21.1.6352462" "patcher;v4" "platform-tools" "platforms;android-24" "tools"
+```
+6. Download this repo
+```
+# git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
+```
+7. Turn on developer mode on your phone (will vary depending on android version)
+8. Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
+9. Plug your phone into the computer.
+10. Run your program.
+```
+make push run
 ```
 
 ## Example project

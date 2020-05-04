@@ -15,9 +15,9 @@ EXTRASRC?=test.c
 SRCS:= $(EXTRASRC) $(RAWDRAWANDROIDSRCS)
 
 ANDROIDVERSION:=24
-SDK:=$$HOME/Android/Sdk
-NDK:=$(SDK)/ndk/20.0.5594570
-BUILD_TOOLS:=$(SDK)/build-tools/29.0.2
+SDK:=$(ANDROID_HOME)
+NDK:=$(SDK)/ndk/21.1.6352462
+BUILD_TOOLS:=$(SDK)/build-tools/29.0.3
 #for older SDKs
 #NDK:=$(SDK)/ndk-bundle
 #BUILD_TOOLS:=$(SDK)/build-tools/28.0.3
