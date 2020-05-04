@@ -15,8 +15,8 @@ SRC?=test.c
 #We've tested it with android version 24.
 ANDROIDVERSION?=24
 #Default is to be strip down, but your app can override it.
-CFLAGS?=-ffunction-sections -Os
-LDFLAGS?=-s
+CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall
+LDFLAGS?=-Wl,--gc-sections -s
 
 ADB?=adb
 
@@ -36,8 +36,7 @@ BUILD_TOOLS?=$(firstword $(wildcard $(ANDROIDSDK)/build-tools/*) )
 testsdk :
 	echo $(BUILD_TOOLS)
 
-
-CFLAGS+=-DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=\"$(APPNAME)\"
+CFLAGS+=-DCNFGGLES -DANDROID -DAPPNAME=\"$(APPNAME)\"
 CFLAGS+=-I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
 LDFLAGS += -lm -L$(NDK)toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
 LDFLAGS += -shared -uANativeActivity_onCreate
