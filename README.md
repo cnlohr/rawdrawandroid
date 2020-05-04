@@ -14,21 +14,17 @@ With this framework you get:
 
 ![Screen Shot](https://github.com/cnlohr/rawdrawandroid/raw/master/screenshot.png)
 
-DISCLAIMER: I take no warranty or responsibility for this code.  Use at your own risk.  I've never released an app on the app store, so there may be some fundamental
-issue with using this toolset to make commercial apps!
+DISCLAIMER: I take no warranty or responsibility for this code.  Use at your own risk.  I've never released an app on the app store, so there may be some fundamental issue with using this toolset to make commercial apps!
+
+## Why?
+
+Becaue sometimes you want to do things that don't fit into the normal way of doing it and all the discussions online revolve around doing it with all the normal processes.  And those processes change, making it difficult to keep up and do specific things.  By using `Makefile`s it's easy to see what exact commands are executed and add custom rules and tweak your build.  C is a universal language.  Rawdraw operates on everything from an ESP8266, to RaspberryPi, Windows Linux and now, even Android.  Write code once, use it everywhere.
+
+When you don't fill your build process with hills of beans, you end up being left with the parts that are important, and not the frivilous parts. This makes it easier to develop, deploy, etc, because everything takes much less time.
 
 ## Development Environment
 
-Most of the testing was done on Linux, however @AEFeinstein has done at least cursory testing in Windows.
-
-You still need some components of Android studio set up to use this, so it's generally easier to just install
-Android studio completely, but there are instructions on sort of how to do it piecemeal for Windows.
-
-### Windows
-
-If you're developing in Windows Subsystem for Linux (WSL), follow the "Steps for GUI-less install" to install the Android components from the command line, without any GUI components.
-In order to push the APK to your phone, you need `adb` installed in Windows as well, so get that from https://developer.android.com/studio#downloads. Installing the full Android Studio is easier, but you can also get the "Command line tools only" and install `adb` from there.
-Once you have `adb` for Windows, modify this project's `Makefile` to invoke `adb.exe` instead of `adb` in all three places. The `.exe` will invoke the Windows host `adb` instead of the Linux version. That will allow you to upload the APK.
+Most of the testing was done on Linux, however @AEFeinstein has done at least cursory testing in Windows.  You still need some components of Android studio set up to use this, so it's generally easier to just install Android studio completely, but there are instructions on sort of how to do it piecemeal for Windows.
 
 ### Linux install Android Studio with NDK.
 
@@ -60,17 +56,28 @@ This set of steps describes how to install Android Studio with NDK support in Li
 	make push run
 ```
 
-### Steps for GUI-less install (Windows)
-1. Install prerequisites:
+### Steps for GUI-less install (Windows, WSL)
+
+If you're developing in Windows Subsystem for Linux (WSL), follow the "Steps for GUI-less install" to install the Android components from the command line, without any GUI components.
+
+### Extra note for actually deploying to device in Windows
+
+In order to push the APK to your phone, you need `adb` installed in Windows as well.  You can do that by getting the full Android Studio from https://developer.android.com/studio#downloads or directly https://dl.google.com/android/repository/platform-tools_r24.0.4-windows.zip. Installing the full Android Studio is easier, but you can also get the "Command line tools only" and install `adb` from there.  The steps below outline how to do this with the direct link.
+
+### Rest of steps
+
+1. Install Windows Subsystem for Linux (WSL).  You can find instructions here: https://docs.microsoft.com/en-us/windows/wsl/install-win10 - we use "Ubuntu" for this.
+
+2. Install prerequisites:
 ```
-# sudo apt install openjdk-11-jdk-headless adb
+# sudo apt install openjdk-11-jdk-headless adb unzip zip
 ```
-2. Download "Command line tools only": https://developer.android.com/studio#downloads
+2. Download "Command line tools only": https://developer.android.com/studio#downloads - you can get a URL and use `wget` in WSL to download the tools by clicking on the "Linux" toolset, then right-clicking on the accept link and saying copy link to location.  Then you can say `wget <link>` in WSL.
 3. Create a folder for the Android SDK and export it. You may want to add that export to your `~/.bashrc`:
 ```
 # mkdir ~/android-sdk
 # export ANDROID_HOME=~/android-sdk
-# printf "\nANDROID_HOME=~/android-sdk\n" >> ~/.bashrc
+# printf "\nexport ANDROID_HOME=~/android-sdk\n" >> ~/.bashrc
 ```
 4. Unzip the "Command line tools only" file so that `tools` is in your brand new `android-sdk` folder.
 5. Install the SDK and NDK components:
@@ -78,16 +85,30 @@ This set of steps describes how to install Android Studio with NDK support in Li
 # yes | $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
 # $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;29.0.3" "cmake;3.10.2.4988404" "ndk;21.1.6352462" "patcher;v4" "platform-tools" "platforms;android-24" "tools"
 ```
-6. Download this repo
+6. Install the Windows ADB toolset.
+```
+mkdir -p $ANDROID_HOME/windows
+cd $ANDROID_HOME/windows
+wget https://dl.google.com/android/repository/platform-tools_r24.0.4-windows.zip
+unzip platform-tools_r24.0.4-windows.zip
+export ADB=$ANDROID_HOME/windows/platform-tools/adb.exe
+printf "\nexport ADB=$ANDROID_HOME/windows/platform-tools/adb.exe\n" >> ~/.bashrc
+```
+6. NOTE: because of updates to environment variables, you may want to close and re-open your WSL terminal.
+7. Download this repo
 ```
 # git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
 ```
-7. Turn on developer mode on your phone (will vary depending on android version)
-8. Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
-9. Plug your phone into the computer.
-10. Run your program.
+8. Turn on developer mode on your phone (will vary depending on android version)
+9. Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
+10. Plug your phone into the computer.
+11. Make your keystore.
 ```
-make push run
+make keystore
+```
+12. Compile and run your program.
+```
+make run
 ```
 
 ## If you are going to use this
