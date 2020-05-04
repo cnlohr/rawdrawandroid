@@ -25,6 +25,7 @@ SDK_LOCATIONS+=$(ANDROID_HOME) ~/Android/Sdk
 ANDROIDSDK?=$(firstword $(foreach dir, $(SDK_LOCATIONS), $(basename $(dir) ) ) )
 NDK?=$(firstword $(wildcard $(ANDROIDSDK)/ndk/*) )
 BUILD_TOOLS?=$(firstword $(wildcard $(ANDROIDSDK)/build-tools/*) )
+ADB?=adb
 
 testsdk :
 	echo $(BUILD_TOOLS)
@@ -105,15 +106,15 @@ makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
 
 
 uninstall : 
-	(adb uninstall $(PACKAGENAME))||true
+	($(ADB) uninstall $(PACKAGENAME))||true
 
 push : makecapk.apk
 	echo "Installing" $(PACKAGENAME)
-	adb install makecapk.apk
+	$(ADB) install makecapk.apk
 
 run : push
 	$(eval ACTIVITYNAME:=$(shell $(AAPT) dump badging makecapk.apk | grep "launchable-activity" | cut -f 2 -d"'"))
-	adb shell am start -n $(PACKAGENAME)/$(ACTIVITYNAME)
+	$(ADB) shell am start -n $(PACKAGENAME)/$(ACTIVITYNAME)
 
 clean :
 	rm -rf temp.apk makecapk.apk makecapk 
