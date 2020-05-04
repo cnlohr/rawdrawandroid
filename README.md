@@ -16,17 +16,17 @@ With this framework you get:
 
 DISCLAIMER: I take no warranty or responsibility for this code.  Use at your own risk.  I've never released an app on the app store, so there may be some fundamental issue with using this toolset to make commercial apps!
 
-## Why?
+# Why?
 
 Becaue sometimes you want to do things that don't fit into the normal way of doing it and all the discussions online revolve around doing it with all the normal processes.  And those processes change, making it difficult to keep up and do specific things.  By using `Makefile`s it's easy to see what exact commands are executed and add custom rules and tweak your build.  C is a universal language.  Rawdraw operates on everything from an ESP8266, to RaspberryPi, Windows Linux and now, even Android.  Write code once, use it everywhere.
 
 When you don't fill your build process with hills of beans, you end up being left with the parts that are important, and not the frivilous parts. This makes it easier to develop, deploy, etc, because everything takes much less time.
 
-## Development Environment
+# Development Environment
 
 Most of the testing was done on Linux, however @AEFeinstein has done at least cursory testing in Windows.  You still need some components of Android studio set up to use this, so it's generally easier to just install Android studio completely, but there are instructions on sort of how to do it piecemeal for Windows.
 
-### Linux install Android Studio with NDK.
+## Linux install Android Studio with NDK.
 
 This set of steps describes how to install Android Studio with NDK support in Linux.  It uses the graphical installer and installs a lot more stuff than the instructions below.  You may be able to mix-and-match these two sets of instructions.  For instance if you are on Linux but don't want to sacrifice 6 GB of disk to the Googs.
 
@@ -56,7 +56,7 @@ This set of steps describes how to install Android Studio with NDK support in Li
 	make push run
 ```
 
-### Steps for GUI-less install (Windows, WSL)
+## Steps for GUI-less install (Windows, WSL)
 
 If you're developing in Windows Subsystem for Linux (WSL), follow the "Steps for GUI-less install" to install the Android components from the command line, without any GUI components.
 
@@ -111,7 +111,7 @@ make keystore
 make run
 ```
 
-## If you are going to use this
+# If you are going to use this
  * Check out the example here: https://github.com/cnlohr/rawdrawandroidexample
  * You may want to copy-and-paste this project, but, you could probably use it as a submodule.  You may also want to copy-and-paste the submodule.
  * You *MUST* override the app name.  See in Makefile `APPNAME` - you should be able to include this project's makefile and override that.  You must also update `AndroidManifest.xml` with whatever name and org you plan to use.  That means updating all three fields. Both `android:name` fields and the `package` field in the header.
@@ -127,7 +127,7 @@ adb logcat | grep UnsatisfiedLinkError
 ```
 
 
-## Helper functions
+# Helper functions
 
 Because we are doing this entirelly in the NDK, with the JNI, we won't have the luxury of writing any Java/Kotlin code and calling it.  That means all of the examples online have to be heavily marshalled.  In rawdraw's EGL driver, we have many examples of how to do that.  That said, you can use the following functions which get you most of the way there.
 
@@ -143,7 +143,7 @@ Because we are doing this entirelly in the NDK, with the JNI, we won't have the 
 
 `int android_width, android_height;`
 
-## Departures from regular rawdraw.
+# Departures from regular rawdraw.
 
 Also, above and beyond rawdraw, you *must* implement the following two functions to handle when your apps is suspended or resumed.
 
@@ -152,7 +152,7 @@ Also, above and beyond rawdraw, you *must* implement the following two functions
 
 In addition to that, the syntax of `HandleMotion(...)` is different, in that instead of the `mask` variable being a mask, it is simply updating that specific pointer.
 
-## TODO
+# TODO
 
 Try a bunch of these cool priveleges, see what they all do.
 * permission.ACCESS
