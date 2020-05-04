@@ -11,9 +11,9 @@ APPNAME?=cnfgtest
 PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/rawdraw/CNFGFunctions.c $(RAWDRAWANDROID)/rawdraw/CNFGEGLDriver.c $(RAWDRAWANDROID)/rawdraw/CNFG3D.c $(RAWDRAWANDROID)/android_native_app_glue.c
-EXTRASRC?=test.c
-SRCS:= $(EXTRASRC) $(RAWDRAWANDROIDSRCS)
-
+SRC?=test.c
+ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
+#We've tested it with android version 24.
 ANDROIDVERSION?=24
 
 #if you have a custom Android Home location you can add it to this list.  
@@ -32,7 +32,7 @@ testsdk :
 
 CFLAGS+=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=\"$(APPNAME)\"
 CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
-LDFLAGS += -lm -Ltoolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
+LDFLAGS += -lm -L$(NDK)toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
 LDFLAGS += -shared -s -uANativeActivity_onCreate
 
 CC_ARM32:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$(ANDROIDVERSION)-clang
@@ -65,19 +65,19 @@ folders:
 	mkdir -p makecapk/lib/x86
 	mkdir -p makecapk/lib/x86_64
 
-makecapk/lib/arm64-v8a/lib$(APPNAME).so : $(SRCS)
+makecapk/lib/arm64-v8a/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/arm64-v8a
 	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ $(LDFLAGS)
 
-makecapk/lib/armeabi-v7a/lib$(APPNAME).so : $(SRCS)
+makecapk/lib/armeabi-v7a/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/armeabi-v7a
 	$(CC_ARM64) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ $(LDFLAGS)
 
-makecapk/lib/x86/lib$(APPNAME).so : $(SRCS)
+makecapk/lib/x86/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/x86
 	$(CC_x86) $(CFLAGS) $(CFLAGS_x86) -o $@ $^ $(LDFLAGS)
 
-makecapk/lib/x86_64/lib$(APPNAME).so : $(SRCS)
+makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/x86_64
 	$(CC_x86) $(CFLAGS) $(CFLAGS_x86_64) -o $@ $^ $(LDFLAGS)
 
