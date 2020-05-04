@@ -12,9 +12,16 @@ PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/rawdraw/CNFGFunctions.c $(RAWDRAWANDROID)/rawdraw/CNFGEGLDriver.c $(RAWDRAWANDROID)/rawdraw/CNFG3D.c $(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
-ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
 #We've tested it with android version 24.
 ANDROIDVERSION?=24
+#Default is to be strip down, but your app can override it.
+CFLAGS?=-ffunction-sections -Os
+LDFLAGS?=-s
+
+ADB?=adb
+
+
+ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
 
 #if you have a custom Android Home location you can add it to this list.  
 #This makefile will select the first present folder.
@@ -25,15 +32,15 @@ SDK_LOCATIONS+=$(ANDROID_HOME) ~/Android/Sdk
 ANDROIDSDK?=$(firstword $(foreach dir, $(SDK_LOCATIONS), $(basename $(dir) ) ) )
 NDK?=$(firstword $(wildcard $(ANDROIDSDK)/ndk/*) )
 BUILD_TOOLS?=$(firstword $(wildcard $(ANDROIDSDK)/build-tools/*) )
-ADB?=adb
 
 testsdk :
 	echo $(BUILD_TOOLS)
 
-CFLAGS+=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=\"$(APPNAME)\"
-CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
+
+CFLAGS+=-DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=\"$(APPNAME)\"
+CFLAGS+=-I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
 LDFLAGS += -lm -L$(NDK)toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
-LDFLAGS += -shared -s -uANativeActivity_onCreate
+LDFLAGS += -shared -uANativeActivity_onCreate
 
 CC_ARM32:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$(ANDROIDVERSION)-clang
 CC_ARM64:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$(ANDROIDVERSION)-clang
