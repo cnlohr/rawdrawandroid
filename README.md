@@ -12,7 +12,7 @@ With this framework you get a demo which has:
  * Ability to store asset files in your APK and read them with `AAssetManager`
  * Permissions support for using things like sound (example in colorchord)
 
-![Screen Shot](https://github.com/cnlohr/rawdrawandroid/raw/master/screenshot.png)
+[![Screen Shot](http://img.youtube.com/vi/Cz_LvaN36Ag/0.jpg)https://www.youtube.com/watch?v=Cz_LvaN36Ag]
 
 DISCLAIMER: I take no warranty or responsibility for this code.  Use at your own risk.  I've never released an app on the app store, so there may be some fundamental issue with using this toolset to make commercial apps!
 
