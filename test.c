@@ -5,15 +5,17 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include "CNFGFunctions.h"
 #include "os_generic.h"
-#include "CNFG3D.h"
 #include <GLES3/gl3.h>
 #include <asset_manager.h>
 #include <asset_manager_jni.h>
 #include <android_native_app_glue.h>
 #include <android/log.h>
 #include <android/sensor.h>
+
+#define CNFG_IMPLEMENTATION
+#define CNFG3D
+#include "CNFG.h"
 
 #define LOGI(...)  ((void)__android_log_print(ANDROID_LOG_INFO, APPNAME, __VA_ARGS__))
 #define printf( x...) LOGI( x )
@@ -333,6 +335,7 @@ int main()
 
 		frames++;
 		//On Android, CNFGSwapBuffers must be called, and CNFGUpdateScreenWithBitmap does not have an implied framebuffer swap.
+		CNFGSwapBuffers();
 
 		ThisTime = OGGetAbsoluteTime();
 		if( ThisTime > LastFPSTime + 1 )
@@ -343,7 +346,6 @@ int main()
 			LastFPSTime+=1;
 		}
 
-		CNFGSwapBuffers();
 	}
 
 	return(0);

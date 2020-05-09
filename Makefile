@@ -10,7 +10,7 @@ all : makecapk.apk
 APPNAME?=cnfgtest
 PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
-RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/rawdraw/CNFGFunctions.c $(RAWDRAWANDROID)/rawdraw/CNFGEGLDriver.c $(RAWDRAWANDROID)/rawdraw/CNFG3D.c $(RAWDRAWANDROID)/android_native_app_glue.c
+RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
 ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
 #We've tested it with android version 24.
@@ -30,7 +30,7 @@ ADB?=adb
 testsdk :
 	echo $(BUILD_TOOLS)
 
-CFLAGS+=-Os -DCNFGGLES -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=\"$(APPNAME)\"
+CFLAGS+=-Os -DANDROID -DANDROID_FULLSCREEN -DAPPNAME=\"$(APPNAME)\"
 CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
 LDFLAGS += -lm -L$(NDK)toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
 LDFLAGS += -shared -s -uANativeActivity_onCreate
