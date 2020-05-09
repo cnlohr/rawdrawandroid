@@ -62,6 +62,8 @@ int8_t android_app_read_cmd(struct android_app* android_app) {
 }
 
 static void print_cur_config(struct android_app* android_app) {
+	//For additional debugging this can be enabled, but for now - no need for the extra space.
+/*
     char lang[2], country[2];
     AConfiguration_getLanguage(android_app->config, lang);
     AConfiguration_getCountry(android_app->config, country);
@@ -84,6 +86,7 @@ static void print_cur_config(struct android_app* android_app) {
             AConfiguration_getScreenLong(android_app->config),
             AConfiguration_getUiModeType(android_app->config),
             AConfiguration_getUiModeNight(android_app->config));
+*/
 }
 
 void android_app_pre_exec_cmd(struct android_app* android_app, int8_t cmd) {

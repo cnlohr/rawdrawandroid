@@ -12,6 +12,7 @@
 #include <android_native_app_glue.h>
 #include <android/log.h>
 #include <android/sensor.h>
+#include "CNFGAndroid.h"
 
 #define CNFG_IMPLEMENTATION
 #define CNFG3D
@@ -220,16 +221,15 @@ uint32_t randomtexturedata[256*256];
 
 int main()
 {
-	int i, x, y;
+	int x, y;
 	double ThisTime;
 	double LastFPSTime = OGGetAbsoluteTime();
-	double LastFrameTime = OGGetAbsoluteTime();
-	double SecToWait;
 	int linesegs = 0;
 
 	CNFGBGColor = 0x400000;
 	CNFGDialogColor = 0x444444;
 	CNFGSetupFullscreen( "Test Bench", 0 );
+	//CNFGSetup( "Test Bench", 0, 0 );
 
 	for( x = 0; x < HMX; x++ )
 	for( y = 0; y < HMY; y++ )
@@ -253,9 +253,7 @@ int main()
 	while(1)
 	{
 		int i, pos;
-		float f;
 		iframeno++;
-		RDPoint pto[3];
 
 		CNFGHandleInput();
 		AccCheck();
