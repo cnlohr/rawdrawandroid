@@ -10,7 +10,8 @@ With this framework you get a demo which has:
  * Accelerometer/gyro input, multi-touch
  * An android keyboard for key input
  * Ability to store asset files in your APK and read them with `AAssetManager`
- * Permissions support for using things like sound (example in colorchord)
+ * Permissions support for using things like sound. Example in https://github.com/cnlohr/cnfa
+ * Directly access USB devices.  Example in https://github.com/cnlohr/androidusbtest
 
 Youtube Video:
 

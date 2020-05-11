@@ -12,8 +12,8 @@ PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
-#We've tested it with android version 24.
-ANDROIDVERSION?=24
+#We've tested it with android version 24 and 29.
+ANDROIDVERSION?=29
 #Default is to be strip down, but your app can override it.
 CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall
 LDFLAGS?=-Wl,--gc-sections -s
@@ -52,23 +52,23 @@ CC_x86:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android$(A
 CC_x86_64=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android$(ANDROIDVERSION)-clang
 AAPT:=$(BUILD_TOOLS)/aapt
 
-# Which binaries to build?
-TARGETS:=makecapk/lib/arm64-v8a/lib$(APPNAME).so #makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
+# Which binaries to build? NOTE: If you want to add to the number of supported releases, add to this line.
+TARGETS?=makecapk/lib/arm64-v8a/lib$(APPNAME).so #makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
 
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp
 CFLAGS_x86:=-march=i686 -mtune=intel -mssse3 -mfpmath=sse -m32
 CFLAGS_x86_64:=-march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=intel
 /home/cnlohr/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang:
-KEYPASSWORD:=password
+STOREPASS?=password
 DNAME:="CN=example.com, OU=ID, O=Example, L=Doe, S=John, C=GB"
 KEYSTOREFILE:=my-release-key.keystore
-ALIASNAME:=alias_name
+ALIASNAME?=standkey
 
 keystore : $(KEYSTOREFILE)
 
 $(KEYSTOREFILE) :
-	keytool -genkey -v -keystore $(KEYSTOREFILE) -alias $(ALIASNAME) -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass $(KEYPASSWORD) -dname $(DNAME)
+	keytool -genkey -v -keystore $(KEYSTOREFILE) -alias $(ALIASNAME) -keyalg RSA -keysize 2048 -validity 10000 -storepass $(STOREPASS) -keypass $(STOREPASS) -dname $(DNAME)
 
 folders:
 	mkdir -p makecapk/lib/arm64-v8a
@@ -112,8 +112,10 @@ makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
 	rm -rf makecapk.apk
 	cd makecapk && zip -D9r ../makecapk.apk .
 	ls -l makecapk.apk
-	jarsigner -sigalg SHA1withRSA -digestalg SHA1 -verbose -keystore $(KEYSTOREFILE) -storepass $(KEYPASSWORD) makecapk.apk $(ALIASNAME)
+	jarsigner -sigalg SHA1withRSA -digestalg SHA1 -verbose -keystore $(KEYSTOREFILE) -storepass $(STOREPASS) makecapk.apk $(ALIASNAME)
 	ls -l makecapk.apk
+	rm -rf aligned.apk
+	$(BUILD_TOOLS)/zipalign -v 4 makecapk.apk aligned.apk
 
 
 uninstall : 
