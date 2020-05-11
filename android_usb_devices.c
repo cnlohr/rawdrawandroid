@@ -1,12 +1,15 @@
 //Copyright 2020 <>< Charles Lohr, You may use this file and library freely under the MIT/x11, NewBSD or ColorChord Licenses.
 
 #include "android_usb_devices.h"
+#include "CNFG.h"
 #include "os_generic.h"
+
 
 double dTimeOfUSBFail;
 double dTimeOfLastAsk;
 jobject deviceConnection = 0;
 int deviceConnectionFD = 0;
+extern struct android_app * gapp;
 
 void DisconnectUSB()
 {
@@ -14,15 +17,13 @@ void DisconnectUSB()
 	dTimeOfUSBFail = OGGetAbsoluteTime();
 }
 
-void RequestPermissionOrGetConnectionFD()
+int RequestPermissionOrGetConnectionFD( char * ats, uint16_t vid, uint16_t pid )
 {
-	ats = assettext; //reset printf
-
 	//Don't permit 
 	if( OGGetAbsoluteTime() - dTimeOfUSBFail < 1 ) 
 	{
 		ats+=sprintf(ats, "Comms failed.  Waiting to reconnect." );
-		return;
+		return -1;
 	}
 
 	struct android_app* app = gapp;
@@ -101,7 +102,7 @@ void RequestPermissionOrGetConnectionFD()
 			vendorId,
 			productId, ifaceCount );
 
-		if( vendorId == 0xabcd && productId == 0xf410 )
+		if( vendorId == vid && productId == pid )
 		{
 			if( ifaceCount )
 			{
@@ -191,7 +192,7 @@ void RequestPermissionOrGetConnectionFD()
 		else
 		{
 			//Because we want to read and write to an interrupt endpoint, we need to claim the interface - it seems setting interfaces is insufficient here.
-			jboolean claimOk = env->CallBooleanMethod( envptr, deviceConnection, MethodclaimInterface, matchingInterface, true );
+			jboolean claimOk = env->CallBooleanMethod( envptr, deviceConnection, MethodclaimInterface, matchingInterface, 1 );
 			//jboolean claimOk = env->CallBooleanMethod( envptr, deviceConnection, MethodsetInterface, matchingInterface );
 			//jboolean claimOk = 1;
 			if( claimOk )
@@ -205,5 +206,6 @@ void RequestPermissionOrGetConnectionFD()
 	}
 
 	jnii->DetachCurrentThread( jniiptr );
+	return (!deviceConnectionFD)?-5:0;
 }
 

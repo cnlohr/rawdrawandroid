@@ -7,11 +7,11 @@
 #include <asset_manager_jni.h>
 #include <android_native_app_glue.h>
 
-void RequestPermissionOrGetConnectionFD();
+int RequestPermissionOrGetConnectionFD( char * debug_status, uint16_t vid, uint16_t pid );
 void DisconnectUSB(); //Disconnect from USB
 
-jobject deviceConnection = 0;
-int deviceConnectionFD = 0;
+extern jobject deviceConnection;
+extern int deviceConnectionFD;
 
 #endif
 
