@@ -4,7 +4,6 @@
 #include "CNFG.h"
 #include "os_generic.h"
 
-
 double dTimeOfUSBFail;
 double dTimeOfLastAsk;
 jobject deviceConnection = 0;

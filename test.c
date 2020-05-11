@@ -270,8 +270,7 @@ int main()
 		CNFGPenX = 0; CNFGPenY = 400;
 		CNFGColor( 0xffffff );
 		CNFGDrawText( assettext, 15 );
-		void FlushRender();
-		FlushRender();
+		CNFGFlushRender();
 
 		CNFGPenX = 0; CNFGPenY = 480;
 		char st[50];
