@@ -161,6 +161,48 @@ Also, above and beyond rawdraw, you *must* implement the following two functions
 
 In addition to that, the syntax of `HandleMotion(...)` is different, in that instead of the `mask` variable being a mask, it is simply updating that specific pointer.
 
+# Google Play
+
+**WARNING** I am unsure if you actually can publish to Google Play!
+
+## Part 0: Changes to your app.
+
+1. Make sure you are using the newest SDK.
+2. You will need to add a versionCode to your `AndroidManifest.xml`.  In your `AndroidManifest.xml`, add `android:versionCode="integer"` to the tag where "integer" is a version number.
+3. In your `AndroidManifest.xml`, change `android:debuggable` to false.
+4. You may want to support multiple platforms natively.  Add the following to your `Makefile`: `TARGETS:=makecapk/lib/arm64-v8a/lib$(APPNAME).so makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so`
+
+
+Get a google play account.  Details surrounding app creation are outside the scope of this readme.  When getting ready to upload your APK.
+
+## Keys:  You will want a key for yourself that's a real key.  Not the fake one.
+
+First you will need to make a real key.  This can be accomplished by deleting our fake key `my-release-key.keystore` and executing the following command (being careful to fill `####` in with real info): 
+
+```make keystore STOREPASS=#### DNAME="\"CN=####, OU=ID, O=####, L=####, S=####, C=####\"" ALIASNAME=####```
+
+The alias name will be `standkey`. You will want to verify you can build your app with this key.  Be sure to fill in STOREPASS the same.
+
+```make clean run  STOREPASS=####```
+
+
+## Let Google create and manage my app signing key (recommended) 
+
+
+## Export and upload a key and certificate from a Java keystore 
+
+If you want to use the play store key with "Export and upload a key and certificate from a Java keystore" Instead of `Let Google create and manage my app signing key (recommended)` and follow PEKP instructions.
+
+## Prepping your app for upload.
+
+You MUST have aligned ZIPs for the Play store.  You must run the following command:
+
+```zipalign -c -v 8 makecapk.apk```
+
+Upload your APK `makecapk.apk` made with your key.
+
+
+
 # TODO
 
 Try a bunch of these cool priveleges, see what they all do.

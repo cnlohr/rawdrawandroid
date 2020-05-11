@@ -59,7 +59,6 @@ CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp
 CFLAGS_x86:=-march=i686 -mtune=intel -mssse3 -mfpmath=sse -m32
 CFLAGS_x86_64:=-march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=intel
-/home/cnlohr/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang:
 STOREPASS?=password
 DNAME:="CN=example.com, OU=ID, O=Example, L=Doe, S=John, C=GB"
 KEYSTOREFILE:=my-release-key.keystore
