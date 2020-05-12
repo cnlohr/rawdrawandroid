@@ -77,6 +77,8 @@ void HandleKey( int keycode, int bDown )
 	lastkey = keycode;
 	lastkeydown = bDown;
 	if( keycode == 10 && !bDown ) { keyboard_up = 0; AndroidDisplayKeyboard( keyboard_up );  }
+
+	if( keycode == 4 ) { AndroidSendToBack( 1 ); } //Handle Physical Back Button.
 }
 
 void HandleButton( int x, int y, int button, int bDown )
