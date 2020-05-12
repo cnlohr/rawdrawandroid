@@ -30,15 +30,7 @@
 #define LOGE(...) ((void)printf(__VA_ARGS__))
 
 /* For debug builds, always enable the debug traces in this library */
-#ifndef NDEBUG
-#  define LOGV(...)  ((void)printf(__VA_ARGS__))
-#else
-#  define LOGV(...)  ((void)0)
-#endif
 
-
-#define LOGI(...) ((void)printf(__VA_ARGS__))
-#define LOGE(...) ((void)printf(__VA_ARGS__))
 #ifndef NDEBUG
 #  define LOGV(...)  ((void)printf(__VA_ARGS__))
 #else
