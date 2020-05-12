@@ -10,16 +10,12 @@
 #include <asset_manager.h>
 #include <asset_manager_jni.h>
 #include <android_native_app_glue.h>
-#include <android/log.h>
 #include <android/sensor.h>
 #include "CNFGAndroid.h"
 
 #define CNFG_IMPLEMENTATION
 #define CNFG3D
 #include "CNFG.h"
-
-#define LOGI(...)  ((void)__android_log_print(ANDROID_LOG_INFO, APPNAME, __VA_ARGS__))
-#define printf( x...) LOGI( x )
 
 float mountainangle;
 float mountainoffsetx;

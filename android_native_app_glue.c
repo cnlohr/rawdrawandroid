@@ -49,7 +49,7 @@ static int pfd[2];
 pthread_t debug_capture_thread;
 static void * debug_capture_thread_fn( void * v )
 {
-	struct android_app * app = (struct android_app*)v;
+	//struct android_app * app = (struct android_app*)v;
     ssize_t readSize;
     char buf[2048];
 
