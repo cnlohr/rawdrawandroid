@@ -128,6 +128,6 @@ run : push
 	$(ADB) shell am start -n $(PACKAGENAME)/$(ACTIVITYNAME)
 
 clean :
-	rm -rf temp.apk makecapk.apk makecapk 
+	rm -rf temp.apk makecapk.apk makecapk aligned.apk
 
 
