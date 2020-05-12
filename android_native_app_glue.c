@@ -26,15 +26,47 @@
 #include "android_native_app_glue.h"
 #include <android/log.h>
 
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "threaded_app", __VA_ARGS__))
-#define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, "threaded_app", __VA_ARGS__))
+#define LOGI(...) ((void)printf(__VA_ARGS__))
+#define LOGE(...) ((void)printf(__VA_ARGS__))
 
 /* For debug builds, always enable the debug traces in this library */
 #ifndef NDEBUG
-#  define LOGV(...)  ((void)__android_log_print(ANDROID_LOG_VERBOSE, "threaded_app", __VA_ARGS__))
+#  define LOGV(...)  ((void)printf(__VA_ARGS__))
 #else
 #  define LOGV(...)  ((void)0)
 #endif
+
+
+#define LOGI(...) ((void)printf(__VA_ARGS__))
+#define LOGE(...) ((void)printf(__VA_ARGS__))
+#ifndef NDEBUG
+#  define LOGV(...)  ((void)printf(__VA_ARGS__))
+#else
+#  define LOGV(...)  ((void)0)
+#endif
+
+static int pfd[2];
+pthread_t debug_capture_thread;
+static void * debug_capture_thread_fn( void * v )
+{
+	struct android_app * app = (struct android_app*)v;
+    ssize_t readSize;
+    char buf[2048];
+
+    while((readSize = read(pfd[0], buf, sizeof buf - 1)) > 0) {
+        if(buf[readSize - 1] == '\n') {
+            --readSize;
+        }
+        buf[readSize] = 0;  // add null-terminator
+        __android_log_write(ANDROID_LOG_DEBUG, APPNAME, buf); // Set any log level you want
+#ifdef RDALOGFNCB
+		extern void RDALOGFNCB( int size, char * buf );
+		RDALOGFNCB( readSize, buf );
+#endif
+		//if( debug_capture_hook_function ) debug_capture_hook_function( readSize, buf );
+    }
+    return 0;
+}
 
 static void free_saved_state(struct android_app* android_app) {
     pthread_mutex_lock(&android_app->mutex);
@@ -191,7 +223,7 @@ static void android_app_destroy(struct android_app* android_app) {
 static void process_input(struct android_app* app, struct android_poll_source* source) {
     AInputEvent* event = NULL;
     while (AInputQueue_getEvent(app->inputQueue, &event) >= 0) {
-        LOGV("New input event: type=%d\n", AInputEvent_getType(event));
+        //LOGV("New input event: type=%d\n", AInputEvent_getType(event));
         if (AInputQueue_preDispatchEvent(app->inputQueue, event)) {
             continue;
         }
@@ -252,6 +284,20 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     pthread_mutex_init(&android_app->mutex, NULL);
     pthread_cond_init(&android_app->cond, NULL);
 
+
+    pthread_attr_t attr; 
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+	//Capture input
+    setvbuf(stdout, 0, _IOLBF, 0); // make stdout line-buffered
+    setvbuf(stderr, 0, _IONBF, 0); // make stderr unbuffered
+    pipe(pfd);
+    dup2(pfd[1], 1);
+    dup2(pfd[1], 2);
+    pthread_create(&debug_capture_thread, &attr, debug_capture_thread_fn, android_app);
+
+
     if (savedState != NULL) {
         android_app->savedState = malloc(savedStateSize);
         android_app->savedStateSize = savedStateSize;
@@ -266,7 +312,6 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     android_app->msgread = msgpipe[0];
     android_app->msgwrite = msgpipe[1];
 
-    pthread_attr_t attr; 
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_create(&android_app->thread, &attr, android_app_entry, android_app);
