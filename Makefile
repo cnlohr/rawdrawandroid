@@ -15,7 +15,7 @@ SRC?=test.c
 #We've tested it with android version 24 and 29.
 ANDROIDVERSION?=29
 #Default is to be strip down, but your app can override it.
-CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall
+CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
 LDFLAGS?=-Wl,--gc-sections -s
 ANDROID_FULLSCREEN?=y
 ADB?=adb
@@ -110,11 +110,10 @@ makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
 	unzip -o temp.apk -d makecapk
 	rm -rf makecapk.apk
 	cd makecapk && zip -D9r ../makecapk.apk .
-	ls -l makecapk.apk
 	jarsigner -sigalg SHA1withRSA -digestalg SHA1 -verbose -keystore $(KEYSTOREFILE) -storepass $(STOREPASS) makecapk.apk $(ALIASNAME)
-	ls -l makecapk.apk
 	rm -rf aligned.apk
 	$(BUILD_TOOLS)/zipalign -v 4 makecapk.apk aligned.apk
+	ls -l aligned.apk
 
 
 uninstall : 
