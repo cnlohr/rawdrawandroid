@@ -92,7 +92,7 @@ makecapk/lib/arm64-v8a/lib$(APPNAME).so : $(ANDROIDSRCS)
 
 makecapk/lib/armeabi-v7a/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/armeabi-v7a
-	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ $(LDFLAGS)
+	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM32) -o $@ $^ $(LDFLAGS)
 
 makecapk/lib/x86/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/x86
