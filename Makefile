@@ -30,14 +30,15 @@ ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
 #if you have a custom Android Home location you can add it to this list.  
 #This makefile will select the first present folder.
 
+
 ifeq ($(UNAME), Linux)
 OS_NAME = linux-x86_64
-SDK_LOCATIONS+= $(ANDROID_HOME)  ~/Android/Sdk
 endif
 ifeq ($(UNAME), Darwin)
-OS_NAME = darwin-x86_64
-SDK_LOCATIONS+= $(HOME)/Library/Android/sdk 
+OS_NAME = darwin-x86_64 
 endif
+
+SDK_LOCATIONS += $(ANDROID_HOME)  ~/Android/Sdk
 
 #Just a little Makefile witchcraft to find the first SDK_LOCATION that exists
 #Then find an ndk folder and build tools folder in there.
