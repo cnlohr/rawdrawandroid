@@ -35,7 +35,7 @@ ifeq ($(UNAME), Linux)
 OS_NAME = linux-x86_64
 endif
 ifeq ($(UNAME), Darwin)
-OS_NAME = darwin-x86_64 
+OS_NAME = darwin-x86_64
 endif
 
 SDK_LOCATIONS += $(ANDROID_HOME)  ~/Android/Sdk
