@@ -19,6 +19,8 @@ CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
 LDFLAGS?=-Wl,--gc-sections -s
 ANDROID_FULLSCREEN?=y
 ADB?=adb
+UNAME := $(shell uname)
+
 
 
 
@@ -27,7 +29,16 @@ ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
 
 #if you have a custom Android Home location you can add it to this list.  
 #This makefile will select the first present folder.
-SDK_LOCATIONS+=$(ANDROID_HOME) ~/Android/Sdk
+
+
+ifeq ($(UNAME), Linux)
+OS_NAME = linux-x86_64
+endif
+ifeq ($(UNAME), Darwin)
+OS_NAME = darwin-x86_64
+endif
+
+SDK_LOCATIONS += $(ANDROID_HOME)  ~/Android/Sdk
 
 #Just a little Makefile witchcraft to find the first SDK_LOCATION that exists
 #Then find an ndk folder and build tools folder in there.
@@ -43,13 +54,13 @@ ifeq (ANDROID_FULLSCREEN,y)
 CFLAGS +=-DANDROID_FULLSCREEN
 endif
 CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
-LDFLAGS += -lm -L$(NDK)toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
+LDFLAGS += -lm -L$(NDK)toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
 LDFLAGS += -shared -uANativeActivity_onCreate
 
-CC_ARM64:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$(ANDROIDVERSION)-clang
-CC_ARM32:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$(ANDROIDVERSION)-clang
-CC_x86:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android$(ANDROIDVERSION)-clang
-CC_x86_64=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android$(ANDROIDVERSION)-clang
+CC_ARM64:=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/aarch64-linux-android$(ANDROIDVERSION)-clang
+CC_ARM32:=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/armv7a-linux-androideabi$(ANDROIDVERSION)-clang
+CC_x86:=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/x86_64-linux-android$(ANDROIDVERSION)-clang
+CC_x86_64=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/x86_64-linux-android$(ANDROIDVERSION)-clang
 AAPT:=$(BUILD_TOOLS)/aapt
 
 # Which binaries to build? NOTE: If you want to add to the number of supported releases, add to this line.
