@@ -38,7 +38,8 @@ ifeq ($(UNAME), Darwin)
 OS_NAME = darwin-x86_64
 endif
 
-SDK_LOCATIONS += $(ANDROID_HOME)  ~/Android/Sdk
+# Search list for where to try to find the SDK
+SDK_LOCATIONS += $(ANDROID_HOME) ~/Android/Sdk $(HOME)/Library/Android/sdk
 
 #Just a little Makefile witchcraft to find the first SDK_LOCATION that exists
 #Then find an ndk folder and build tools folder in there.
