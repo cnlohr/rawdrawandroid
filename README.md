@@ -13,8 +13,6 @@ With this framework you get a demo which has:
  * Permissions support for using things like sound. Example in https://github.com/cnlohr/cnfa
  * Directly access USB devices.  Example in https://github.com/cnlohr/androidusbtest
 
-Youtube Video:
-
 [![Youtube Video](http://img.youtube.com/vi/Cz_LvaN36Ag/0.jpg)](http://www.youtube.com/watch?v=Cz_LvaN36Ag "")
 
 DISCLAIMER: I take no warranty or responsibility for this code.  Use at your own risk.  I've never released an app on the app store, so there may be some fundamental issue with using this toolset to make commercial apps!
