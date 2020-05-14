@@ -13,7 +13,7 @@ RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
 #We've tested it with android version 24 and 29.
-ANDROIDVERSION?=29
+ANDROIDVERSION?=24
 #Default is to be strip down, but your app can override it.
 CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
 LDFLAGS?=-Wl,--gc-sections -s
