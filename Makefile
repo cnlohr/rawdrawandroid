@@ -13,11 +13,12 @@ RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
 #We've tested it with android version 24 and 29.
-ANDROIDVERSION?=29
+ANDROIDVERSION?=17
 #Default is to be strip down, but your app can override it.
 CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
 LDFLAGS?=-Wl,--gc-sections -s
-ANDROID_FULLSCREEN?=y
+ANDROID_FULLSCREEN?=n
+ANDROID_WITH_SENSOR?=n
 ADB?=adb
 UNAME := $(shell uname)
 
@@ -50,12 +51,15 @@ BUILD_TOOLS?=$(firstword $(wildcard $(ANDROIDSDK)/build-tools/*) )
 testsdk :
 	echo $(BUILD_TOOLS)
 
-CFLAGS+=-Os -DANDROID -DAPPNAME=\"$(APPNAME)\"
-ifeq (ANDROID_FULLSCREEN,y)
+CFLAGS+=-DANDROID -DAPPNAME=\"$(APPNAME)\"
+ifeq ($(ANDROID_FULLSCREEN),y)
 CFLAGS +=-DANDROID_FULLSCREEN
 endif
+ifeq ($(ANDROID_WITH_SENSOR),y)
+CFLAGS +=-DANDROID_WITH_SENSOR
+endif
 CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
-LDFLAGS += -lm -L$(NDK)toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) -lGLESv3 -lEGL -landroid -llog
+LDFLAGS += -lm -L$(NDK)toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/armv7a-linux-androideabi/$(ANDROIDVERSION) -lGLESv2 -lEGL -landroid -llog
 LDFLAGS += -shared -uANativeActivity_onCreate
 
 CC_ARM64:=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/aarch64-linux-android$(ANDROIDVERSION)-clang
@@ -65,7 +69,8 @@ CC_x86_64=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/x86_64-linux-android$(A
 AAPT:=$(BUILD_TOOLS)/aapt
 
 # Which binaries to build? NOTE: If you want to add to the number of supported releases, add to this line.
-TARGETS?=makecapk/lib/arm64-v8a/lib$(APPNAME).so #makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
+#TARGETS?=makecapk/lib/arm64-v8a/lib$(APPNAME).so #makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
+TARGETS?=makecapk/lib/armeabi-v7a/lib$(APPNAME).so
 
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp -m32

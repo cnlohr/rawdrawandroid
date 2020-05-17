@@ -10,7 +10,6 @@
 #include <asset_manager.h>
 #include <asset_manager_jni.h>
 #include <android_native_app_glue.h>
-#include <android/sensor.h>
 #include "CNFGAndroid.h"
 
 #define CNFG_IMPLEMENTATION
@@ -21,20 +20,24 @@ float mountainangle;
 float mountainoffsetx;
 float mountainoffsety;
 
+#ifdef ANDROID_WITH_SENSOR
+#include <android/sensor.h>
 ASensorManager * sm;
 const ASensor * as;
 ASensorEventQueue* aeq;
 ALooper * l;
-
+#endif
 
 void SetupIMU()
 {
+#ifdef ANDROID_WITH_SENSOR
 	sm = ASensorManager_getInstance();
 	as = ASensorManager_getDefaultSensor( sm, ASENSOR_TYPE_GYROSCOPE );
 	l = ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
 	aeq = ASensorManager_createEventQueue( sm, (ALooper*)&l, 0, 0, 0 ); //XXX??!?! This looks wrong.
 	ASensorEventQueue_enableSensor( aeq, as);
 	printf( "setEvent Rate: %d\n", ASensorEventQueue_setEventRate( aeq, as, 10000 ) );
+#endif
 }
 
 float accx, accy, accz;
@@ -42,6 +45,7 @@ int accs;
 
 void AccCheck()
 {
+#ifdef ANDROID_WITH_SENSOR
 	ASensorEvent evt;
 	do
 	{
@@ -55,6 +59,12 @@ void AccCheck()
 		mountainoffsetx += accx;
 		accs++;
 	} while( 1 );
+#else
+	accx = 0.f;
+	accy = 0.f;
+	accz = 0.f;
+	accs = 0;
+#endif
 }
 
 unsigned frames = 0;
@@ -226,8 +236,12 @@ int main()
 
 	CNFGBGColor = 0x400000;
 	CNFGDialogColor = 0x444444;
+
+#ifdef ANDROID_FULLSCREEN
 	CNFGSetupFullscreen( "Test Bench", 0 );
-	//CNFGSetup( "Test Bench", 0, 0 );
+#else
+	CNFGSetup( "Test Bench", 0, 0 );
+#endif
 
 	for( x = 0; x < HMX; x++ )
 	for( y = 0; y < HMY; y++ )
