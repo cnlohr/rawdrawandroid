@@ -58,8 +58,8 @@ endif
 ifeq ($(ANDROID_WITH_SENSOR),y)
 CFLAGS +=-DANDROID_WITH_SENSOR
 endif
-CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID)
-LDFLAGS += -lm -L$(NDK)toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/armv7a-linux-androideabi/$(ANDROIDVERSION) -lGLESv2 -lEGL -landroid -llog
+CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID) -DANDROIDVERSION=$(ANDROIDVERSION)
+LDFLAGS += -lm -lGLESv2 -lEGL -landroid -llog
 LDFLAGS += -shared -uANativeActivity_onCreate
 
 CC_ARM64:=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/aarch64-linux-android$(ANDROIDVERSION)-clang
@@ -94,19 +94,19 @@ folders:
 
 makecapk/lib/arm64-v8a/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/arm64-v8a
-	$(CC_ARM64) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ $(LDFLAGS)
+	$(CC_ARM64) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
 makecapk/lib/armeabi-v7a/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/armeabi-v7a
-	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM32) -o $@ $^ $(LDFLAGS)
+	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM32) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/arm-linux-androideabi/$(ANDROIDVERSION) $(LDFLAGS)
 
 makecapk/lib/x86/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/x86
-	$(CC_x86) $(CFLAGS) $(CFLAGS_x86) -o $@ $^ $(LDFLAGS)
+	$(CC_x86) $(CFLAGS) $(CFLAGS_x86) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/i686-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
 makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/x86_64
-	$(CC_x86) $(CFLAGS) $(CFLAGS_x86_64) -o $@ $^ $(LDFLAGS)
+	$(CC_x86) $(CFLAGS) $(CFLAGS_x86_64) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/x86_64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
 #We're really cutting corners.  You should probably use resource files.. Replace android:label="@string/app_name" and add a resource file.
 #Then do this -S Sources/res on the aapt line.
