@@ -167,7 +167,7 @@ In addition to that, the syntax of `HandleMotion(...)` is different, in that ins
 
 # Google Play
 
-**WARNING** I am unsure if you actually can publish to Google Play!
+As it turns out, Google somehow lets apps built with this onto the store.  Like ColorChord https://github.com/cnlohr/colorchord.
 
 ## Part 0: Changes to your app.
 
@@ -175,6 +175,9 @@ In addition to that, the syntax of `HandleMotion(...)` is different, in that ins
 2. You will need to add a versionCode to your `AndroidManifest.xml`.  In your `AndroidManifest.xml`, add `android:versionCode="integer"` to the tag where "integer" is a version number.
 3. In your `AndroidManifest.xml`, change `android:debuggable` to false.
 4. You may want to support multiple platforms natively.  Add the following to your `Makefile`: `TARGETS:=makecapk/lib/arm64-v8a/lib$(APPNAME).so makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so`
+5. You will need to specify target and Min SDK in your `AndroidManifest.xml`  See: `<uses-sdk android:minSdkVersion="22" android:targetSdkVersion="28" />`
+6. Those target / min versions must match your Makefile.  Note that without a `minSdkVerson` google will wrongfully assume 1.  This is dangerous.  Be sure to test your app on a device with whichever minSdkVersion you've specified.
+7.  You will need to disable the debuggable flag in your app.  See `<application android:debuggable="false" ...>`
 
 
 Get a google play account.  Details surrounding app creation are outside the scope of this readme.  When getting ready to upload your APK.
