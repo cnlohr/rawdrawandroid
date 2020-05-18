@@ -142,7 +142,7 @@ adb logcat | grep UnsatisfiedLinkError
 
 # Helper functions
 
-Because we are doing this entirelly in the NDK, with the JNI, we won't have the luxury of writing any Java/Kotlin code and calling it.  That means all of the examples online have to be heavily marshalled.  In rawdraw's EGL driver, we have many examples of how to do that.  That said, you can use the following functions which get you most of the way there.
+Because we are doing this entirelly in the NDK, with the JNI, we won't have the luxury of writing any Java/Kotlin code and calling it.  That means all of the examples online have to be heavily marshalled.  In rawdraw's EGL driver, we have many examples of how to do that.  That said, you can use the following functions which get you most of the way there. 
 
 `struct android_app * gapp;`
 
@@ -155,6 +155,9 @@ Because we are doing this entirelly in the NDK, with the JNI, we won't have the 
 `int AndroidGetUnicodeChar( int keyCode, int metaState );`
 
 `int android_width, android_height;`
+
+`extern int android_sdk_version; //Derived at start from property ro.build.version.sdk`
+
 
 # Departures from regular rawdraw.
 
