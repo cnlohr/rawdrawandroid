@@ -12,7 +12,10 @@ PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
-#We've tested it with android version 24 and 29.
+
+#We've tested it with android version 22, 24, 28 and 29. 
+#You can target something like Android 28, but if you set ANDROIDVERSION to say 22, then
+#Your app should (though not necessarily) support all the way back to Android 22. 
 ANDROIDVERSION?=29
 ANDROIDTARGET?=$(ANDROIDVERSION)
 #Default is to be strip down, but your app can override it.
