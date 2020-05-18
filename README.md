@@ -122,11 +122,11 @@ make run
  * Check out the example here: https://github.com/cnlohr/rawdrawandroidexample
  * You may want to copy-and-paste this project, but, you could probably use it as a submodule.  You may also want to copy-and-paste the submodule.
  * You *MUST* override the app name.  
-  * See in Makefile `APPNAME` and `PACKAGENAME` you should be able to include this project's makefile and override that.
-  * You must also update `AndroidManifest.xml` with whatever name and org you plan to use.
-   * You will need to update: `package` in `<manifest>` to be your `PACKAGENAME` variable in Makefile.
-   * Both `android:label` labels need to reflect your new app name.  They are in your `<application>` and `<activity>` sections.
-   * Update the `android:value` field in `android.app.lib_name`
+  - See in Makefile `APPNAME` and `PACKAGENAME` you should be able to include this project's makefile and override that.
+  - You must also update `AndroidManifest.xml` with whatever name and org you plan to use.
+  - You will need to update: `package` in `<manifest>` to be your `PACKAGENAME` variable in Makefile.
+  - Both `android:label` labels need to reflect your new app name.  They are in your `<application>` and `<activity>` sections.
+  - Update the `android:value` field in `android.app.lib_name`
  
  * If you are using permission you have to prompt for, you must both add it to your `AndroidManifest.xml` as well as check if you have it, and if not, prompt the user.  See helper functions below.  You can see an example of this with `sound_android.c` from ColorChord.  https://github.com/cnlohr/colorchord/blob/master/colorchord2/sound_android.c
   * Be sure to uninstall any previously installed apps which would look like this app, if you have a different build by the same name signed with another key, bad things will happen.
