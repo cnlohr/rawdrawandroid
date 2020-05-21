@@ -41,6 +41,9 @@ endif
 ifeq ($(UNAME), Darwin)
 OS_NAME = darwin-x86_64
 endif
+ifeq ($(OS), Windows_NT)
+OS_NAME = windows-x86_64
+endif
 
 # Search list for where to try to find the SDK
 SDK_LOCATIONS += $(ANDROID_HOME) ~/Android/Sdk $(HOME)/Library/Android/sdk
