@@ -52,7 +52,7 @@ SDK_LOCATIONS += $(ANDROID_HOME) ~/Android/Sdk $(HOME)/Library/Android/sdk
 #Then find an ndk folder and build tools folder in there.
 ANDROIDSDK?=$(firstword $(foreach dir, $(SDK_LOCATIONS), $(basename $(dir) ) ) )
 NDK?=$(firstword $(wildcard $(ANDROIDSDK)/ndk/*) $(wildcard $(ANDROIDSDK)/ndk-bundle/*) )
-BUILD_TOOLS?=$(firstword $(wildcard $(ANDROIDSDK)/build-tools/*) )
+BUILD_TOOLS?=$(lastword $(wildcard $(ANDROIDSDK)/build-tools/*) )
 
 testsdk :
 	echo $(BUILD_TOOLS)
