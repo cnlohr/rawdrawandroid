@@ -1,7 +1,7 @@
 #Copyright (c) 2019-2020 <>< Charles Lohr - Under the MIT/x11 or NewBSD License you choose.
 # NO WARRANTY! NO GUARANTEE OF SUPPORT! USE AT YOUR OWN RISK
 
-all : makecapk.apk 
+all : makecapk.apk
 
 .PHONY : push run
 
@@ -14,9 +14,9 @@ RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
 
-#We've tested it with android version 22, 24, 28 and 29. 
+#We've tested it with android version 22, 24, 28 and 29.
 #You can target something like Android 28, but if you set ANDROIDVERSION to say 22, then
-#Your app should (though not necessarily) support all the way back to Android 22. 
+#Your app should (though not necessarily) support all the way back to Android 22.
 ANDROIDVERSION?=29
 ANDROIDTARGET?=$(ANDROIDVERSION)
 #Default is to be strip down, but your app can override it.
@@ -26,15 +26,10 @@ ANDROID_FULLSCREEN?=y
 ADB?=adb
 UNAME := $(shell uname)
 
-
-
-
-
 ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
 
-#if you have a custom Android Home location you can add it to this list.  
+#if you have a custom Android Home location you can add it to this list.
 #This makefile will select the first present folder.
-
 
 ifeq ($(UNAME), Linux)
 OS_NAME = linux-x86_64
@@ -141,8 +136,6 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 #(zipalign -c -v 8 makecapk.apk)||true #This seems to not work well.
 #jarsigner -verify -verbose -certs makecapk.apk
 
-
-
 makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
 	mkdir -p makecapk/assets
 	echo "Test asset file" > makecapk/assets/asset.txt
@@ -158,8 +151,7 @@ makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
 	rm -rf makecapk.apk
 	@ls -l $(APKFILE)
 
-
-uninstall : 
+uninstall :
 	($(ADB) uninstall $(PACKAGENAME))||true
 
 push : makecapk.apk
@@ -172,4 +164,3 @@ run : push
 
 clean :
 	rm -rf temp.apk makecapk.apk makecapk $(APKFILE)
-
