@@ -1,4 +1,4 @@
-//Copyright 2020 <>< Charles Lohr, You may use this file and library freely under the MIT/x11, NewBSD or ColorChord Licenses.
+/* See LICENSE file for copyright and license details. */
 
 #include "android_usb_devices.h"
 #include "CNFG.h"

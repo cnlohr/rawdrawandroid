@@ -1,5 +1,4 @@
-//Copyright (c) 2011-2020 <>< Charles Lohr - Under the MIT/x11 or NewBSD License you choose.
-// NO WARRANTY! NO GUARANTEE OF SUPPORT! USE AT YOUR OWN RISK
+/* See LICENSE file for copyright and license details. */
 
 #include <stdio.h>
 #include <stdlib.h>
