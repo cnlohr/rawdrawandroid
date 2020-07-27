@@ -23,6 +23,7 @@ float mountainoffsety;
 
 ASensorManager * sm;
 const ASensor * as;
+bool no_sensor_for_gyro = false;
 ASensorEventQueue* aeq;
 ALooper * l;
 
@@ -31,10 +32,14 @@ void SetupIMU()
 {
 	sm = ASensorManager_getInstance();
 	as = ASensorManager_getDefaultSensor( sm, ASENSOR_TYPE_GYROSCOPE );
+	no_sensor_for_gyro = as == NULL;
 	l = ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
 	aeq = ASensorManager_createEventQueue( sm, (ALooper*)&l, 0, 0, 0 ); //XXX??!?! This looks wrong.
-	ASensorEventQueue_enableSensor( aeq, as);
-	printf( "setEvent Rate: %d\n", ASensorEventQueue_setEventRate( aeq, as, 10000 ) );
+	if(!no_sensor_for_gyro) {
+		ASensorEventQueue_enableSensor( aeq, as);
+		printf( "setEvent Rate: %d\n", ASensorEventQueue_setEventRate( aeq, as, 10000 ) );
+	}
+
 }
 
 float accx, accy, accz;
@@ -42,6 +47,10 @@ int accs;
 
 void AccCheck()
 {
+	if(no_sensor_for_gyro) {
+		return;
+	}
+
 	ASensorEvent evt;
 	do
 	{
