@@ -145,7 +145,7 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 
 makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
 	mkdir -p makecapk/assets
-	echo "Test asset file" > makecapk/assets/asset.txt
+	cp -r Sources/assets/* makecapk/assets
 	rm -rf temp.apk
 	$(AAPT) package -f -F temp.apk -I $(ANDROIDSDK)/platforms/android-$(ANDROIDVERSION)/android.jar -M AndroidManifest.xml -S Sources/res -A makecapk/assets -v --target-sdk-version $(ANDROIDTARGET)
 	unzip -o temp.apk -d makecapk
