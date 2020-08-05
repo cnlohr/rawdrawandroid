@@ -143,7 +143,7 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 
 
 
-makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
+makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml
 	mkdir -p makecapk/assets
 	cp -r Sources/assets/* makecapk/assets
 	rm -rf temp.apk
@@ -157,6 +157,17 @@ makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
 	rm -rf temp.apk
 	rm -rf makecapk.apk
 	@ls -l $(APKFILE)
+
+manifest: AndroidManifest.xml
+
+AndroidManifest.xml :
+	rm -rf AndroidManifest.xml
+	export ANDROIDVERSION=$(ANDROIDVERSION) \
+		ANDROIDTARGET=$(ANDROIDTARGET) \
+		APPNAME=$(APPNAME) \
+		LABEL=$(LABEL)
+	envsubst '$$ANDROIDTARGET $$ANDROIDVERSION $$APPNAME $$LABEL' \
+		< AndroidManifest.xml.template > AndroidManifest.xml
 
 
 uninstall : 
