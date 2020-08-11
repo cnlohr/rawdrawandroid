@@ -175,7 +175,7 @@ uninstall :
 
 push : makecapk.apk
 	@echo "Installing" $(PACKAGENAME)
-	$(ADB) install $(APKFILE)
+	$(ADB) install -r $(APKFILE)
 
 run : push
 	$(eval ACTIVITYNAME:=$(shell $(AAPT) dump badging $(APKFILE) | grep "launchable-activity" | cut -f 2 -d"'"))
