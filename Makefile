@@ -162,12 +162,11 @@ manifest: AndroidManifest.xml
 
 AndroidManifest.xml :
 	rm -rf AndroidManifest.xml
-	export PACKAGENAME=$(PACKAGENAME) \
+	PACKAGENAME=$(PACKAGENAME) \
 		ANDROIDVERSION=$(ANDROIDVERSION) \
 		ANDROIDTARGET=$(ANDROIDTARGET) \
 		APPNAME=$(APPNAME) \
-		LABEL=$(LABEL)
-	envsubst '$$ANDROIDTARGET $$ANDROIDVERSION $$APPNAME $$PACKAGENAME $$LABEL' \
+		LABEL=$(LABEL) envsubst '$$ANDROIDTARGET $$ANDROIDVERSION $$APPNAME $$PACKAGENAME $$LABEL' \
 		< AndroidManifest.xml.template > AndroidManifest.xml
 
 
