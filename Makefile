@@ -8,6 +8,8 @@ all : makecapk.apk
 # WARNING WARNING WARNING!  YOU ABSOLUTELY MUST OVERRIDE THE PROJECT NAME
 # you should also override these parameters, get your own signatre file and make your own manifest.
 APPNAME?=cnfgtest
+LABEL?=$(APPNAME)
+APKFILE ?= $(APPNAME).apk
 PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
@@ -46,16 +48,34 @@ OS_NAME = windows-x86_64
 endif
 
 # Search list for where to try to find the SDK
-SDK_LOCATIONS += $(ANDROID_HOME) ~/Android/Sdk $(HOME)/Library/Android/sdk
+SDK_LOCATIONS += $(ANDROID_HOME) $(ANDROID_SDK_ROOT) ~/Android/Sdk $(HOME)/Library/Android/sdk
 
 #Just a little Makefile witchcraft to find the first SDK_LOCATION that exists
 #Then find an ndk folder and build tools folder in there.
 ANDROIDSDK?=$(firstword $(foreach dir, $(SDK_LOCATIONS), $(basename $(dir) ) ) )
-NDK?=$(firstword $(wildcard $(ANDROIDSDK)/ndk/*) $(wildcard $(ANDROIDSDK)/ndk-bundle/*) )
+NDK?=$(firstword $(ANDROID_NDK) $(ANDROID_NDK_HOME) $(wildcard $(ANDROIDSDK)/ndk/*) $(wildcard $(ANDROIDSDK)/ndk-bundle/*) )
 BUILD_TOOLS?=$(lastword $(wildcard $(ANDROIDSDK)/build-tools/*) )
 
+# fall back to default Android SDL installation location if valid NDK was not found
+ifeq ($(NDK),)
+ANDROIDSDK := ~/Android/Sdk
+endif
+
+# Verify if directories are detected
+ifeq ($(ANDROIDSDK),)
+$(error ANDROIDSDK directory not found)
+endif
+ifeq ($(NDK),)
+$(error NDK directory not found)
+endif
+ifeq ($(BUILD_TOOLS),)
+$(error BUILD_TOOLS directory not found)
+endif
+
 testsdk :
-	echo $(BUILD_TOOLS)
+	@echo "SDK:\t\t" $(ANDROIDSDK)
+	@echo "NDK:\t\t" $(NDK)
+	@echo "Build Tools:\t" $(BUILD_TOOLS)
 
 CFLAGS+=-Os -DANDROID -DAPPNAME=\"$(APPNAME)\"
 ifeq (ANDROID_FULLSCREEN,y)
@@ -71,8 +91,11 @@ CC_x86:=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/x86_64-linux-android$(AND
 CC_x86_64=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/x86_64-linux-android$(ANDROIDVERSION)-clang
 AAPT:=$(BUILD_TOOLS)/aapt
 
-# Which binaries to build? NOTE: If you want to add to the number of supported releases, add to this line.
-TARGETS?=makecapk/lib/arm64-v8a/lib$(APPNAME).so #makecapk/lib/armeabi-v7a/lib$(APPNAME).so makecapk/lib/x86/lib$(APPNAME).so makecapk/lib/x86_64/lib$(APPNAME).so
+# Which binaries to build? Just comment/uncomment these lines:
+TARGETS += makecapk/lib/arm64-v8a/lib$(APPNAME).so
+TARGETS += makecapk/lib/armeabi-v7a/lib$(APPNAME).so
+#TARGETS += makecapk/lib/x86/lib$(APPNAME).so
+#TARGETS += makecapk/lib/x86_64/lib$(APPNAME).so
 
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp -m32
@@ -121,32 +144,44 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 
 
 
-makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER)
+makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml
 	mkdir -p makecapk/assets
-	echo "Test asset file" > makecapk/assets/asset.txt
+	cp -r Sources/assets/* makecapk/assets
 	rm -rf temp.apk
 	$(AAPT) package -f -F temp.apk -I $(ANDROIDSDK)/platforms/android-$(ANDROIDVERSION)/android.jar -M AndroidManifest.xml -S Sources/res -A makecapk/assets -v --target-sdk-version $(ANDROIDTARGET)
 	unzip -o temp.apk -d makecapk
 	rm -rf makecapk.apk
 	cd makecapk && zip -D9r ../makecapk.apk .
 	jarsigner -sigalg SHA1withRSA -digestalg SHA1 -verbose -keystore $(KEYSTOREFILE) -storepass $(STOREPASS) makecapk.apk $(ALIASNAME)
-	rm -rf aligned.apk
-	$(BUILD_TOOLS)/zipalign -v 4 makecapk.apk aligned.apk
-	ls -l aligned.apk
+	rm -rf $(APKFILE)
+	$(BUILD_TOOLS)/zipalign -v 4 makecapk.apk $(APKFILE)
+	rm -rf temp.apk
+	rm -rf makecapk.apk
+	@ls -l $(APKFILE)
+
+manifest: AndroidManifest.xml
+
+AndroidManifest.xml :
+	rm -rf AndroidManifest.xml
+	PACKAGENAME=$(PACKAGENAME) \
+		ANDROIDVERSION=$(ANDROIDVERSION) \
+		ANDROIDTARGET=$(ANDROIDTARGET) \
+		APPNAME=$(APPNAME) \
+		LABEL=$(LABEL) envsubst '$$ANDROIDTARGET $$ANDROIDVERSION $$APPNAME $$PACKAGENAME $$LABEL' \
+		< AndroidManifest.xml.template > AndroidManifest.xml
 
 
 uninstall : 
 	($(ADB) uninstall $(PACKAGENAME))||true
 
 push : makecapk.apk
-	echo "Installing" $(PACKAGENAME)
-	$(ADB) install makecapk.apk
+	@echo "Installing" $(PACKAGENAME)
+	$(ADB) install -r $(APKFILE)
 
 run : push
-	$(eval ACTIVITYNAME:=$(shell $(AAPT) dump badging makecapk.apk | grep "launchable-activity" | cut -f 2 -d"'"))
+	$(eval ACTIVITYNAME:=$(shell $(AAPT) dump badging $(APKFILE) | grep "launchable-activity" | cut -f 2 -d"'"))
 	$(ADB) shell am start -n $(PACKAGENAME)/$(ACTIVITYNAME)
 
 clean :
-	rm -rf temp.apk makecapk.apk makecapk aligned.apk
-
+	rm -rf temp.apk makecapk.apk makecapk $(APKFILE)
 

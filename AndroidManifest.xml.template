@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<manifest xmlns:tools="http://schemas.android.com/tools" xmlns:android="http://schemas.android.com/apk/res/android" package="${PACKAGENAME}">
+	<uses-sdk android:minSdkVersion="${ANDROIDVERSION}"
+          android:targetSdkVersion="${ANDROIDTARGET}" />
+    <uses-permission android:name="android.permission.SET_RELEASE_APP"/>
+    <application android:debuggable="true" android:hasCode="false" android:label="${LABEL}" tools:replace="android:icon,android:theme,android:allowBackup,label" android:icon="@mipmap/icon">
+        <activity android:configChanges="keyboardHidden|orientation" android:label="${LABEL}" android:name="android.app.NativeActivity">
+            <meta-data android:name="android.app.lib_name" android:value="${APPNAME}"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
