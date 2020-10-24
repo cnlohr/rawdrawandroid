@@ -17,7 +17,7 @@ With this framework you get a demo which has:
 
 DISCLAIMER: I take no warranty or responsibility for this code.  Use at your own risk.  I've never released an app on the app store, so there may be some fundamental issue with using this toolset to make commercial apps!
 
-For support, you can try chatting with folks on my discord: https://discord.com/invite/YgBuPUZ
+For support, you can try chatting with folks on my discord: https://discord.com/invite/CCeyWyZ
 
 # Why?
 
