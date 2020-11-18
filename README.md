@@ -101,6 +101,8 @@ If your platform command-line tools are **30 or newer**, the command-line tools 
 # $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
 ```
 
+**NOTE** If you are upgrading NDK versions, you may need to remove old versions, this Makefile does not necessarily do the best job at auto-selecting NDK versions.
+
 You can see all avialable versions of software with this command:
 ```
 $ANDROID_HOME/cmdline-tools/bin/sdkmanager --list --sdk_root=${ANDROID_HOME}
