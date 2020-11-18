@@ -102,7 +102,7 @@ export ADB=$ANDROID_HOME/windows/platform-tools/adb.exe
 printf "\nexport ADB=$ANDROID_HOME/windows/platform-tools/adb.exe\n" >> ~/.bashrc
 ```
 
-Alternatively, you may want to use https://dl.google.com/android/repository/platform-tools_r30.0.5-linux.zip for r30.
+Alternatively, you may want to use https://dl.google.com/android/repository/platform-tools_r30.0.5-windows.zip for r30.
 
 6. NOTE: because of updates to environment variables, you may want to close and re-open your WSL terminal.
 7. Download this repo
