@@ -15,6 +15,7 @@
 
 #define CNFG_IMPLEMENTATION
 #define CNFG3D
+
 #include "CNFG.h"
 
 float mountainangle;
@@ -195,7 +196,7 @@ void DrawHeightmap()
 
 		float bright = tdDot( normal, lightdir );
 		if( bright < 0 ) bright = 0;
-		CNFGColor( (int)( bright * 90 ) );
+		CNFGColor( 0xff | ( ( (int)( bright * 90 ) ) << 24 ) );
 
 //		CNFGTackPoly( &pto[0], 3 );		CNFGTackPoly( &pto[3], 3 );
 		CNFGTackSegment( pta[0], pta[1], ptb[0], ptb[1] );
@@ -233,8 +234,7 @@ int main()
 	double LastFPSTime = OGGetAbsoluteTime();
 	int linesegs = 0;
 
-	CNFGBGColor = 0x400000;
-	CNFGDialogColor = 0x444444;
+	CNFGBGColor = 0x000040ff;
 	CNFGSetupFullscreen( "Test Bench", 0 );
 	//CNFGSetup( "Test Bench", 0, 0 );
 
@@ -268,14 +268,14 @@ int main()
 		if( suspended ) { usleep(50000); continue; }
 
 		CNFGClearFrame();
-		CNFGColor( 0xFFFFFF );
+		CNFGColor( 0xFFFFFFFF );
 		CNFGGetDimensions( &screenx, &screeny );
 
 		// Mesh in background
-		glLineWidth( 9.0 );
+		CNFGSetLineWidth( 9 );
 		DrawHeightmap();
 		CNFGPenX = 0; CNFGPenY = 400;
-		CNFGColor( 0xffffff );
+		CNFGColor( 0xffffffff );
 		CNFGDrawText( assettext, 15 );
 		CNFGFlushRender();
 
@@ -283,7 +283,7 @@ int main()
 		char st[50];
 		sprintf( st, "%dx%d %d %d %d %d %d %d\n%d %d\n%5.2f %5.2f %5.2f %d", screenx, screeny, lastbuttonx, lastbuttony, lastmotionx, lastmotiony, lastkey, lastkeydown, lastbid, lastmask, accx, accy, accz, accs );
 		CNFGDrawText( st, 10 );
-		glLineWidth( 2.0 );
+		CNFGSetLineWidth( 2 );
 
 
 /*		CNFGTackSegment( pto[0].x, pto[0].y, pto[1].x, pto[1].y );
@@ -292,13 +292,14 @@ int main()
 */
 
 		// Square behind text
-		CNFGDrawBox( 600, 0, 950, 350);
+		CNFGColor( 0x303030ff );
+		CNFGTackRectangle( 600, 0, 950, 350);
 
 		CNFGPenX = 10; CNFGPenY = 10;
 
 		// Text
 		pos = 0;
-		CNFGColor( 0xffffff );
+		CNFGColor( 0xffffffff );
 		for( i = 0; i < 1; i++ )
 		{
 			int c;
@@ -320,7 +321,7 @@ int main()
 		for( i = 0; i < 400; i++ )
 		{
 			RDPoint pp[3];
-			CNFGColor( 0x00FF00 );
+			CNFGColor( 0x00FF00FF );
 			pp[0].x = (short)(50*sin((float)(i+iframeno)*.01) + (i%20)*30);
 			pp[0].y = (short)(50*cos((float)(i+iframeno)*.01) + (i/20)*20)+700;
 			pp[1].x = (short)(20*sin((float)(i+iframeno)*.01) + (i%20)*30);
@@ -333,9 +334,8 @@ int main()
 		int x, y;
 		for( y = 0; y < 256; y++ )
 		for( x = 0; x < 256; x++ )
-			randomtexturedata[x+y*256] = rand();
-
-		CNFGUpdateScreenWithBitmap( randomtexturedata, 256, 256 );
+			randomtexturedata[x+y*256] = x | ((x*394543L+y*355+iframeno)<<8);
+		CNFGBlitImage( randomtexturedata, 100, 600, 256, 256 );
 
 		frames++;
 		//On Android, CNFGSwapBuffers must be called, and CNFGUpdateScreenWithBitmap does not have an implied framebuffer swap.

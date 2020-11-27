@@ -3,7 +3,8 @@
 Ever wanted to write C code and run it on Android?  Sick of multi-megabyte
 packages just to do the most basic of things.  Well, this is a demo of how
 to make your own APKs and build, install and automatically run them in about
-2 seconds, and with an apk size of about 25kB.
+2 seconds, and with an apk size of about 25kB (with API 26).  API 30 (Android R+)
+is unfortunately at 45kB to support ARM64 + ARM32.
 
 With this framework you get a demo which has:
  * To make a window with OpenGL ES support
@@ -36,6 +37,8 @@ Most of the testing was done on Linux, however @AEFeinstein has done at least cu
 ## Linux install Android Studio with NDK.
 
 This set of steps describes how to install Android Studio with NDK support in Linux.  It uses the graphical installer and installs a lot more stuff than the instructions below.  You may be able to mix-and-match these two sets of instructions.  For instance if you are on Linux but don't want to sacrifice 6 GB of disk to the Googs.
+
+**NOTE** You probably should use the WSL instructions instead of these instructions as it will produc a more lean installation.
 
 1) Install prerequisites:
 ```
