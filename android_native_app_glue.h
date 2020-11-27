@@ -49,7 +49,7 @@ extern "C" {
  *
  * 2/ android_main() receives a pointer to a valid "android_app" structure
  *    that contains references to other important objects, e.g. the
- *    ANativeActivity obejct instance the application is running in.
+ *    ANativeActivity object instance the application is running in.
  *
  * 3/ the "android_app" object holds an ALooper instance that already
  *    listens to two important things:
