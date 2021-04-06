@@ -1,3 +1,5 @@
+[![rawdrawandroid](https://github.com/dreua/rawdrawandroid/actions/workflows/install.yml/badge.svg)](https://github.com/dreua/rawdrawandroid/actions/workflows/install.yml)
+
 # rawdrawandroid
 
 Ever wanted to write C code and run it on Android?  Sick of multi-megabyte

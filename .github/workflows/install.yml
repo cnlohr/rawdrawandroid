@@ -1,0 +1,55 @@
+name: rawdrawandroid
+on:
+  push:
+    branches:
+      - '**' # All branches for now
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Can we do this without a custom "container:"?
+    env:
+      ANDROID_HOME: /home/droid/android-sdk
+      SDKMANAGER: /home/droid/android-sdk/cmdline-tools/bin/sdkmanager
+      TMPFILE: /home/droid/temp.zip
+      URL_CLITOOLS: https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Install dependencies (apt)
+      run: sudo apt-get install -y --no-install-recommends
+            build-essential
+            openjdk-11-jdk-headless
+            unzip
+            wget
+            zip
+            git
+            vim
+            gettext-base
+      
+    - name: Download Android tooling
+      run: sudo mkdir -p ${ANDROID_HOME}
+            && sudo wget --quiet ${URL_CLITOOLS} -O ${TMPFILE}
+            && sudo unzip -d ${ANDROID_HOME} ${TMPFILE}
+            && sudo rm ${TMPFILE}
+                  
+    - name: Install Android tooling
+      run: yes | sudo $SDKMANAGER --sdk_root=${ANDROID_HOME} --licenses
+            && sudo $SDKMANAGER --sdk_root=${ANDROID_HOME}
+                    "build-tools;29.0.3"
+                    "cmake;3.10.2.4988404"
+                    "ndk;22.1.7171670"
+                    "patcher;v4"
+                    "platform-tools"
+                    "platforms;android-30"
+                    "tools"
+                    # This list can probably be reduced
+    - name: Build APK
+      run: make keystore && make
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: apk
+        path: ./*.apk
+
