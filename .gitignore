@@ -1,2 +1,4 @@
 *.keystore
-
+makecapk/
+cnfgtest.apk
+AndroidManifest.xml
