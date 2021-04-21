@@ -53,3 +53,8 @@ jobs:
         name: apk
         path: ./*.apk
 
+    - name: Upload Libraries (*.so)
+      uses: actions/upload-artifact@v2
+      with:
+        name: lib
+        path: "makecapk/lib"
