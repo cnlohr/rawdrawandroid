@@ -108,7 +108,8 @@ If your platform command-line tools are **30**, the command-line tools will be p
 
 If your platform command-line tools are **32**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following:
 ```
-$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;32.0.0" "cmake;3.22.1" "ndk;25.1.8937393" "platforms;android-32" "patcher;v4" "platform-tools" "tools"
+# yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
+# $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;32.0.0" "cmake;3.22.1" "ndk;25.1.8937393" "platforms;android-32" "patcher;v4" "platform-tools" "tools"
 ```
 
 **NOTE** If you are upgrading NDK versions, you may need to remove old versions, this Makefile does not necessarily do the best job at auto-selecting NDK versions.
