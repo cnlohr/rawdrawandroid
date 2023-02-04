@@ -84,34 +84,24 @@ In order to push the APK to your phone, you need `adb` installed in Windows as w
 
 2. Install prerequisites:
 ```
-# sudo apt install openjdk-11-jdk-headless adb unzip zip
+sudo apt install openjdk-11-jdk-headless adb unzip zip
 ```
 2. Download "Command line tools only": https://developer.android.com/studio#downloads - you can get a URL and use `wget` in WSL to download the tools by clicking on the **"Linux"** toolset, then right-clicking on the accept link and saying copy link to location.  Then you can say `wget <link>` in WSL.
 3. Create a folder for the Android SDK and export it. You may want to add that export to your `~/.bashrc`:
 ```
-# mkdir ~/android-sdk
-# export ANDROID_HOME=~/android-sdk
-# printf "\nexport ANDROID_HOME=~/android-sdk\n" >> ~/.bashrc
+mkdir ~/android-sdk
+export ANDROID_HOME=~/android-sdk
+printf "\nexport ANDROID_HOME=~/android-sdk\n" >> ~/.bashrc
 ```
 4. Unzip the "Command line tools only" file so that `tools` is in your brand new `android-sdk` folder.
 5. Install the SDK and NDK components:
 
-If you are using **Android 29 or older**, do this.
-```
-# yes | $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-# $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;29.0.3" "cmake;3.10.2.4988404" "ndk;21.1.6352462" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
-```
-
-If your platform command-line tools are **30**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following:
-```
-# yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-# $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
-```
+For earler versions of tools see note for pre-SDK-32-Tools.
 
 If your platform command-line tools are **32**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following (This appears to be backwards compatbile to some degree with Android 30):
 ```
-# yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-# $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;32.0.0" "cmake;3.22.1" "ndk;25.1.8937393" "platforms;android-32" "patcher;v4" "platform-tools" "tools"
+yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;32.0.0" "cmake;3.22.1" "ndk;25.1.8937393" "platforms;android-32" "patcher;v4" "platform-tools" "tools"
 ```
 
 **NOTE** If you are upgrading NDK versions, you may need to remove old versions, this Makefile does not necessarily do the best job at auto-selecting NDK versions.
@@ -136,7 +126,7 @@ Alternatively, you may want to use https://dl.google.com/android/repository/plat
 6. NOTE: because of updates to environment variables, you may want to close and re-open your WSL terminal.
 7. Download this repo
 ```
-# git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
+git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
 ```
 8. Turn on developer mode on your phone (will vary depending on android version)
 9. Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
@@ -242,6 +232,20 @@ You MUST have aligned ZIPs for the Play store.  You must run the following comma
 ```zipalign -c -v 8 makecapk.apk```
 
 Upload your APK `makecapk.apk` made with your key.
+
+## Pre-SDK-32-Tools
+
+If you are using **Android 29 or older**, do this.
+```
+yes | $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
+$ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;29.0.3" "cmake;3.10.2.4988404" "ndk;21.1.6352462" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
+```
+
+If your platform command-line tools are **30**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following:
+```
+yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
+```
 
 
 
