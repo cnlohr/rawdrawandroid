@@ -46,7 +46,7 @@ This set of steps describes how to install Android Studio with NDK support in Li
 
 1) Install prerequisites:
 ```
-	# sudo apt install openjdk-11-jdk-headless adb
+sudo apt install openjdk-11-jdk-headless adb
 ```
 2) Download Android Studio: https://developer.android.com/studio
 3) Start 'studio.sh' in android-studio/bin
@@ -56,18 +56,19 @@ This set of steps describes how to install Android Studio with NDK support in Li
 7) Select "SDK Tools" -> "NDK (Side-by-side)"
 8) Download this repo
 ```
-	# git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
+git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
+cd rawdrawandroid
 ```
 9) Turn on developer mode on your phone (will vary depending on android version)
 10) Make your own key
 ```
-	make keystore
+make keystore
 ```
 11) Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
 12) Plug your phone into the computer.
 13) Run your program.
 ```
-	make push run
+make push run
 ```
 
 ## Steps for GUI-less install (Windows, WSL)
@@ -98,10 +99,10 @@ printf "\nexport ANDROID_HOME=~/android-sdk\n" >> ~/.bashrc
 
 For earler versions of tools see note for pre-SDK-32-Tools.
 
-If your platform command-line tools are **32**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following (This appears to be backwards compatbile to some degree with Android 30):
+If your platform command-line tools are **30**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following:
 ```
 yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;32.0.0" "cmake;3.22.1" "ndk;25.1.8937393" "platforms;android-32" "patcher;v4" "platform-tools" "tools"
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
 ```
 
 **NOTE** If you are upgrading NDK versions, you may need to remove old versions, this Makefile does not necessarily do the best job at auto-selecting NDK versions.
@@ -248,6 +249,11 @@ yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --li
 $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
 ```
 
+If your platform command-line tools are **32**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following (This appears to be backwards compatbile to some degree with Android 30):
+```
+yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;32.0.0" "cmake;3.22.1" "ndk;25.1.8937393" "platforms;android-32" "patcher;v4" "platform-tools" "tools"
+```
 
 
 # TODO
