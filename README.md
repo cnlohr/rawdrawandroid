@@ -127,6 +127,7 @@ Alternatively, you may want to use https://dl.google.com/android/repository/plat
 7. Download this repo
 ```
 git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
+cd rawdrawandroid
 ```
 8. Turn on developer mode on your phone (will vary depending on android version)
 9. Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
