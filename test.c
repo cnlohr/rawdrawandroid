@@ -7,8 +7,8 @@
 #include <string.h>
 #include "os_generic.h"
 #include <GLES3/gl3.h>
-#include <asset_manager.h>
-#include <asset_manager_jni.h>
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
 #include <android_native_app_glue.h>
 #include <android/sensor.h>
 #include "CNFGAndroid.h"
@@ -125,7 +125,7 @@ void DrawHeightmap()
 
 	mountainoffsety = mountainoffsety - ((mountainoffsety-100) * .1);
 
-	float eye[3] = { (float)sin(mountainangle*(3.14159/180.0))*30*sin(mountainoffsety/100.), (float)cos(mountainangle*(3.14159/180.0))*30*sin(mountainoffsety/100.), 30*cos(mountainoffsety/100.) };
+	float eye[3] = { (float)(sin(mountainangle*(3.14159/180.0))*30*sin(mountainoffsety/100.)), (float)(cos(mountainangle*(3.14159/180.0))*30*sin(mountainoffsety/100.)), (float)(30*cos(mountainoffsety/100.)) };
 	float at[3] = { 0,0, 0 };
 	float up[3] = { 0,0, 1 };
 
@@ -227,12 +227,11 @@ void HandleResume()
 
 uint32_t randomtexturedata[256*256];
 
-int main()
+int main( int argc, char ** argv )
 {
 	int x, y;
 	double ThisTime;
 	double LastFPSTime = OGGetAbsoluteTime();
-	int linesegs = 0;
 
 	CNFGBGColor = 0x000040ff;
 	CNFGSetupFullscreen( "Test Bench", 0 );
@@ -250,7 +249,7 @@ int main()
 	if( file )
 	{
 		size_t fileLength = AAsset_getLength(file);
-		char * temp = malloc( fileLength + 1);
+		char * temp = (char*)malloc( fileLength + 1);
 		memcpy( temp, AAsset_getBuffer( file ), fileLength );
 		temp[fileLength] = 0;
 		assettext = temp;
@@ -259,7 +258,7 @@ int main()
 
 	while(1)
 	{
-		int i, pos;
+		int i;
 		iframeno++;
 
 		CNFGHandleInput();
@@ -298,7 +297,6 @@ int main()
 		CNFGPenX = 10; CNFGPenY = 10;
 
 		// Text
-		pos = 0;
 		CNFGColor( 0xffffffff );
 		for( i = 0; i < 1; i++ )
 		{
@@ -346,7 +344,6 @@ int main()
 		{
 			printf( "FPS: %d\n", frames );
 			frames = 0;
-			linesegs = 0;
 			LastFPSTime+=1;
 		}
 

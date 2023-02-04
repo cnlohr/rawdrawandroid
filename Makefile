@@ -15,20 +15,25 @@ RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
 
-#We've tested it with android version 22, 24, 28, 29 and 30.
+#We've tested it with android version 22, 24, 28, 29 and 30 and 32.
 #You can target something like Android 28, but if you set ANDROIDVERSION to say 22, then
 #Your app should (though not necessarily) support all the way back to Android 22. 
 ANDROIDVERSION?=30
 ANDROIDTARGET?=$(ANDROIDVERSION)
-#Default is to be strip down, but your app can override it.
-CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
-LDFLAGS?=-Wl,--gc-sections -s
+CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall
+LDFLAGS?=-Wl,--gc-sections -Wl,-Map=output.map
+
+# For really tight compiles....
+CFLAGS += -fvisibility=hidden
+LDFLAGS += -s
+
+# For C++
+LDFLAGS += -static-libstdc++
+# $(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/libc.a
+
 ANDROID_FULLSCREEN?=y
 ADB?=adb
 UNAME := $(shell uname)
-
-
-
 
 
 ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
@@ -81,7 +86,7 @@ CFLAGS+=-Os -DANDROID -DAPPNAME=\"$(APPNAME)\"
 ifeq (ANDROID_FULLSCREEN,y)
 CFLAGS +=-DANDROID_FULLSCREEN
 endif
-CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -I$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID) -DANDROIDVERSION=$(ANDROIDVERSION)
+CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/include -fPIC -I$(RAWDRAWANDROID) -DANDROIDVERSION=$(ANDROIDVERSION)
 LDFLAGS += -lm -lGLESv3 -lEGL -landroid -llog
 LDFLAGS += -shared -uANativeActivity_onCreate
 
@@ -93,7 +98,7 @@ AAPT:=$(BUILD_TOOLS)/aapt
 
 # Which binaries to build? Just comment/uncomment these lines:
 TARGETS += makecapk/lib/arm64-v8a/lib$(APPNAME).so
-TARGETS += makecapk/lib/armeabi-v7a/lib$(APPNAME).so
+#TARGETS += makecapk/lib/armeabi-v7a/lib$(APPNAME).so
 #TARGETS += makecapk/lib/x86/lib$(APPNAME).so
 #TARGETS += makecapk/lib/x86_64/lib$(APPNAME).so
 
