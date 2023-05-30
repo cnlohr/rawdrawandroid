@@ -13,9 +13,11 @@
 #include <android/sensor.h>
 #include "CNFGAndroid.h"
 
+#define CNFA_IMPLEMENTATION
 #define CNFG_IMPLEMENTATION
 #define CNFG3D
 
+#include "cnfa/CNFA.h"
 #include "CNFG.h"
 
 float mountainangle;
@@ -27,6 +29,11 @@ const ASensor * as;
 bool no_sensor_for_gyro = false;
 ASensorEventQueue* aeq;
 ALooper * l;
+
+const uint32_t SAMPLE_RATE = 44100;
+const uint16_t SAMPLE_COUNT = 512;
+uint32_t stream_offset = 0;
+uint16_t audio_frequency;
 
 
 void SetupIMU()
@@ -224,6 +231,16 @@ void HandleResume()
 {
 	suspended = 0;
 }
+void Callback( struct CNFADriver * sd, short * out, short * in, int framesp, int framesr )
+{
+	if(suspended) return;
+	audio_frequency = 440;
+	for(uint32_t i = 0; i < framesp; i++) {
+		int16_t sample = INT16_MAX * sin(audio_frequency*(2*M_PI)*(stream_offset+i)/SAMPLE_RATE);
+		out[i] = sample;
+	}
+	stream_offset += framesp;
+}
 
 uint32_t randomtexturedata[256*256];
 
@@ -255,6 +272,7 @@ int main( int argc, char ** argv )
 		assettext = temp;
 	}
 	SetupIMU();
+	InitCNFAAndroid( Callback, "A Name", SAMPLE_RATE, 0, 1, 0, SAMPLE_COUNT, 0, 0, 0 );
 
 	while(1)
 	{
