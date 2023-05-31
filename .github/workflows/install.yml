@@ -18,7 +18,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies (apt)
-      run: sudo apt-get install -y --no-install-recommends
+      run: sudo apt-get update && sudo apt-get install -y --no-install-recommends
             build-essential
             openjdk-11-jdk-headless
             unzip
