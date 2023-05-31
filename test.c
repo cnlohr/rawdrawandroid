@@ -88,6 +88,7 @@ int lastmask = 0;
 int lastkey, lastkeydown;
 
 static int keyboard_up;
+uint8_t buttonstate[8];
 
 void HandleKey( int keycode, int bDown )
 {
@@ -100,6 +101,7 @@ void HandleKey( int keycode, int bDown )
 
 void HandleButton( int x, int y, int button, int bDown )
 {
+	buttonstate[button] = bDown;
 	lastbid = button;
 	lastbuttonx = x;
 	lastbuttony = y;
@@ -233,7 +235,9 @@ void HandleResume()
 }
 void Callback( struct CNFADriver * sd, short * out, short * in, int framesp, int framesr )
 {
+	memset(out, 0, framesp*sizeof(uint16_t));
 	if(suspended) return;
+	if(!buttonstate[1]) return; // play audio only if ~touching with two fingers
 	audio_frequency = 440;
 	for(uint32_t i = 0; i < framesp; i++) {
 		int16_t sample = INT16_MAX * sin(audio_frequency*(2*M_PI)*(stream_offset+i)/SAMPLE_RATE);
