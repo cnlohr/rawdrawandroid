@@ -414,30 +414,21 @@ int main()
 			jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
 			env = (*envptr);
 
-
 			jclass SurfaceViewClass = env->FindClass(envptr, "android/view/SurfaceView");
 			jclass PictureClass = env->FindClass(envptr, "android/graphics/Picture");
 			jclass CanvasClass = env->FindClass(envptr, "android/graphics/Canvas");
 			jclass BitmapClass = env->FindClass(envptr, "android/graphics/Bitmap");
 			jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
-		
 			jmethodID createBitmap = env->GetStaticMethodID(envptr, BitmapClass, "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
 			jmethodID drawMethod = env->GetMethodID(envptr, WebViewClass, "draw", "(Landroid/graphics/Canvas;)V");
-			
 			jclass bmpCfgCls = env->FindClass(envptr, "android/graphics/Bitmap$Config");
+			jstring bitmap_mode = env->NewStringUTF(envptr, "ARGB_8888");
 			jmethodID bmpClsValueOfMid = env->GetStaticMethodID(envptr, bmpCfgCls, "valueOf", "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
-			jobject jBmpCfg = env->CallStaticObjectMethod(envptr, bmpCfgCls, bmpClsValueOfMid, env->NewStringUTF(envptr, "ARGB_8888"));
-
+			jobject jBmpCfg = env->CallStaticObjectMethod(envptr, bmpCfgCls, bmpClsValueOfMid, bitmap_mode);
 			jobject bitmap = env->CallStaticObjectMethod( envptr, BitmapClass, createBitmap, 500, 500, jBmpCfg );
-
-
 			jmethodID canvasConstructor = env->GetMethodID(envptr, CanvasClass, "<init>", "(Landroid/graphics/Bitmap;)V");
-			printf( "Getting object\n" );
 			jobject canvas = env->NewObject(envptr, CanvasClass, canvasConstructor, bitmap );
-
 			env->CallVoidMethod( envptr, GlobalWebViewObject, drawMethod, canvas );
-			
-			printf( "PICCCCTURE MEEEETHOD: %p %p %p\n", createBitmap, jBmpCfg, bitmap );
 
 //			jclass IntBufferClass = env->FindClass(envptr, "java/nio/IntBuffer" );
 //			jmethodID createIntBuffer = env->GetStaticMethodID( envptr, IntBufferClass, "allocate", "(I)Ljava/nio/IntBuffer;");
@@ -456,13 +447,25 @@ int main()
 				if( ((uint32_t*)bufferbytes)[i] != 0xffffffff )
 				printf( "%08x\n", ((uint32_t*)bufferbytes)[i] );
 			}*/
-					CNFGBlitImage( bufferbytes, 400, 600, 500, 500 );
+			CNFGBlitImage( bufferbytes, 400, 600, 500, 500 );
 
-
-			env->DeleteLocalRef( envptr, buffer );
+			env->DeleteLocalRef( envptr, SurfaceViewClass );
+			env->DeleteLocalRef( envptr, PictureClass );
+			env->DeleteLocalRef( envptr, CanvasClass );
+			env->DeleteLocalRef( envptr, BitmapClass );
+			env->DeleteLocalRef( envptr, WebViewClass );
+			env->DeleteLocalRef( envptr, bmpCfgCls );
+			env->DeleteLocalRef( envptr, bitmap_mode );
+//			env->DeleteLocalRef( envptr, canvasConstructor );
+	//		env->DeleteLocalRef( envptr, createBitmap );
+	//		env->DeleteLocalRef( envptr, drawMethod );
+	//		env->DeleteLocalRef( envptr, bmpClsValueOfMid );
 			env->DeleteLocalRef( envptr, bitmap );
 			env->DeleteLocalRef( envptr, canvas );
-
+			env->DeleteLocalRef( envptr, jBmpCfg );
+			env->DeleteLocalRef( envptr, buffer );
+			
+			free( bufferbytes );
 /*
 			env->CallVoidMethod( envptr, drawID, PictureObject, CanvasObject );
 			jmethodID getWidthID = env->GetMethodID( envptr, PictureClass, "getWidth", "()I" );
