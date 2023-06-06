@@ -227,6 +227,35 @@ void HandleResume()
 
 uint32_t randomtexturedata[256*256];
 
+void init()
+{
+	printf( "INIT INIT INTI******************************************************\n" );
+}
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
+	printf( "**************************JNI_OnLoad******************************************************\n" );
+    JNIEnv* env;
+    if ((*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+        return JNI_ERR;
+    }
+    jclass clazz = (*env)->FindClass(env, "com/example/myapp/NativeWebView");
+    if (!clazz) {
+        return JNI_ERR;
+    }
+    static const JNINativeMethod methods[] = {
+        { "init", "()V", (void*)init },
+      //  { "loadUrl", "(Ljava/lang/String;)V", (void*)loadUrl },
+      //  { "destroy", "()V", (void*)destroy }
+    };
+    if ((*env)->RegisterNatives(env, clazz, methods, sizeof(methods) / sizeof(methods[0])) < 0) {
+        return JNI_ERR;
+    }
+    return JNI_VERSION_1_6;
+}
+
+jobject WebViewObject = 0;
+
+
 int main()
 {
 	int x, y;
@@ -257,6 +286,7 @@ int main()
 	}
 	SetupIMU();
 
+
 	while(1)
 	{
 		int i, pos;
@@ -270,6 +300,26 @@ int main()
 		CNFGClearFrame();
 		CNFGColor( 0xFFFFFFFF );
 		CNFGGetDimensions( &screenx, &screeny );
+
+
+
+			const struct JNINativeInterface * env = 0;
+			const struct JNINativeInterface ** envptr = &env;
+			const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+			jobject clazz = gapp->activity->clazz;
+			printf( "---> clazz: %p\n", clazz );
+			//printf( "---> clszz: %p\n", clszz );
+			const struct JNIInvokeInterface * jnii = *jniiptr;
+
+			jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+			env = (*envptr);
+
+			jclass clszz = env->GetObjectClass(envptr,gapp->activity->clazz);
+			jmethodID setContentViewMethod = env->GetMethodID(envptr, clszz, "setContentView", "(Landroid/view/View;)V");
+			printf( "CVM %p\n", setContentViewMethod );
+			
+			env->CallVoidMethod(envptr,clazz, setContentViewMethod, WebViewObject );
+
 
 		// Mesh in background
 		CNFGSetLineWidth( 9 );
