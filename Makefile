@@ -18,8 +18,8 @@ SRC?=test.c
 #We've tested it with android version 22, 24, 28, 29 and 30.
 #You can target something like Android 28, but if you set ANDROIDVERSION to say 22, then
 #Your app should (though not necessarily) support all the way back to Android 22. 
-ANDROIDVERSION=29
-ANDROIDTARGET=29
+ANDROIDVERSION=30
+ANDROIDTARGET=30
 #$(ANDROIDVERSION)
 #Default is to be strip down, but your app can override it.
 CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
@@ -157,7 +157,7 @@ makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml
 	rm -rf $(APKFILE)
 	$(BUILD_TOOLS)/zipalign -v 4 makecapk.apk $(APKFILE)
 	#Using the apksigner in this way is only required on Android 30+
-	#$(BUILD_TOOLS)/apksigner sign --key-pass pass:$(STOREPASS) --ks-pass pass:$(STOREPASS) --ks $(KEYSTOREFILE) $(APKFILE)
+	$(BUILD_TOOLS)/apksigner sign --key-pass pass:$(STOREPASS) --ks-pass pass:$(STOREPASS) --ks $(KEYSTOREFILE) $(APKFILE)
 	rm -rf temp.apk
 	rm -rf makecapk.apk
 	@ls -l $(APKFILE)

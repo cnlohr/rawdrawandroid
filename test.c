@@ -253,8 +253,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
     return JNI_VERSION_1_6;
 }
 
-jobject WebViewObject = 0;
-
+jobject GlobalWebViewObject = 0;
+jobject SurfaceViewObject;
 
 int main()
 {
@@ -302,7 +302,7 @@ int main()
 		CNFGGetDimensions( &screenx, &screeny );
 
 
-
+#if 0
 			const struct JNINativeInterface * env = 0;
 			const struct JNINativeInterface ** envptr = &env;
 			const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
@@ -314,11 +314,23 @@ int main()
 			jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
 			env = (*envptr);
 
-			jclass clszz = env->GetObjectClass(envptr,gapp->activity->clazz);
-			jmethodID setContentViewMethod = env->GetMethodID(envptr, clszz, "setContentView", "(Landroid/view/View;)V");
-			printf( "CVM %p\n", setContentViewMethod );
+
+			jclass SurfaceViewClass = env->FindClass(envptr, "android/view/SurfaceView");
+			jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
+			jmethodID caputrePictureMethod = env->GetMethodID(envptr, WebViewClass, "capturePicture", "()Landroid/graphics/Picture;");
+			printf( "PICCCCTURE MEEEETHOD: %p\n", caputrePictureMethod );
+			printf( "CVM %p\n", caputrePictureMethod );
 			
-			env->CallVoidMethod(envptr,clazz, setContentViewMethod, WebViewObject );
+			jobject PictureObject = env->CallObjectMethod(envptr, GlobalWebViewObject, caputrePictureMethod );
+			printf( "CPAM %p\n", PictureObject );
+			
+			if( PictureObject )
+			{
+				env->DeleteLocalRef( envptr, PictureObject );
+			}
+//			jnii->DetachCurrentThread( jniiptr );
+	
+#endif
 
 
 		// Mesh in background

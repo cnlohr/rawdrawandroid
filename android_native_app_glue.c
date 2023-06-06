@@ -25,6 +25,15 @@
 
 #include "android_native_app_glue.h"
 #include <android/log.h>
+#include <android/native_activity.h>
+
+
+
+extern jobject GlobalWebViewObject;
+extern jobject SurfaceViewObject;
+struct android_app * gapp;
+
+
 
 #define LOGI(...) ((void)printf(__VA_ARGS__))
 #define LOGE(...) ((void)printf(__VA_ARGS__))
@@ -314,6 +323,106 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     }
     pthread_mutex_unlock(&android_app->mutex);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+		//ALooper* looper;
+		{
+				    jobject WebViewObject;
+
+			const struct JNINativeInterface * env = 0;
+			const struct JNINativeInterface ** envptr = &env;
+			const struct JNIInvokeInterface ** jniiptr = activity->vm;
+			jobject clazz = activity->clazz;
+			printf( "---> clazz: %p\n", clazz );
+			//printf( "---> clszz: %p\n", clszz );
+			const struct JNIInvokeInterface * jnii = *jniiptr;
+
+			jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+			env = (*envptr);
+
+
+			// Part 0 create a looper
+
+			//looper = ALooper_prepare( 0 );
+
+		//	printf( "LOOPER: %p\n", looper );
+
+	//		ALooper_acquire(looper);
+  
+			printf( "This Looper: %p\n", ALooper_forThread() );
+
+			int oFD, oEvents;
+			void * odat;
+			ALooper_pollOnce( 100, &oFD, &oEvents, &odat );
+
+			jclass clszz = env->GetObjectClass(envptr,clazz);
+
+			jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
+			//jclass niClass = env->FindClass(envptr, "android/app/NativeActivity");
+
+			jclass activityClass = env->FindClass(envptr, "android/app/Activity");
+			jmethodID activityGetContextMethod = env->GetMethodID(envptr, activityClass, "getApplicationContext", "()Landroid/content/Context;");
+			jobject contextObject = env->CallObjectMethod(envptr, clazz, activityGetContextMethod);
+
+			printf( "%p %p %p\n", activityClass, activityGetContextMethod, contextObject );
+
+			// WebView(Context context)
+		    jmethodID WebViewConstructor = env->GetMethodID(envptr, WebViewClass, "<init>", "(Landroid/content/Context;)V");
+			printf( "Getting object\n" );
+			WebViewObject = env->NewObject(envptr, WebViewClass, WebViewConstructor, contextObject );
+		    jmethodID WebViewLoadURLMethod = env->GetMethodID(envptr, WebViewClass, "loadUrl", "(Ljava/lang/String;)V");
+			printf( "******** URL: %p %p\n", WebViewObject, WebViewLoadURLMethod );
+			jstring strul = env->NewStringUTF( envptr, "https://wikipedia.org" );
+			env->CallVoidMethod(envptr, WebViewObject, WebViewLoadURLMethod, strul );
+
+			printf( "WEBBBBBB %p %p %p\n", WebViewClass, WebViewConstructor, WebViewObject );
+			
+			
+		    jmethodID setMeasuredDimensionMethodID = env->GetMethodID(envptr, WebViewClass, "setMeasuredDimension", "(II)V");
+		    env->CallVoidMethod(envptr, WebViewObject, setMeasuredDimensionMethodID, 500, 500 );
+		    
+			GlobalWebViewObject = env->NewGlobalRef(envptr, WebViewObject);
+
+//			jnii->DetachCurrentThread( jniiptr );
+
+/*
+			jmethodID setContentViewMethod = env->GetMethodID(envptr, activityClass, "setContentView", "(Landroid/view/View;)V");
+			printf( "CVM %p\n", setContentViewMethod );
+			env->CallVoidMethod(envptr, clazz, setContentViewMethod, WebViewObject );
+
+			// Let's try to make a new view. --> NOPE!
+
+			jclass SurfaceViewClass = env->FindClass(envptr, "android/opengl/GLSurfaceView");
+		    jmethodID SurfaceViewConstructor = env->GetMethodID(envptr, SurfaceViewClass, "<init>", "(Landroid/content/Context;)V");
+			SurfaceViewObject = env->NewObject(envptr, SurfaceViewClass, SurfaceViewConstructor, contextObject );
+
+			jmethodID addViewMethod = env->GetMethodID(envptr, SurfaceViewClass, "addView", "(Landroid/view/View;)V");
+			env->CallVoidMethod(envptr, SurfaceViewObject, addViewMethod, WebViewObject );
+			//jmethodID setContentViewMethod = env->GetMethodID(envptr, activityClass, "setContentView", "(Landroid/view/View;)V");
+			printf( "CVM %p %p\n", setContentViewMethod, SurfaceViewObject );
+			//env->CallVoidMethod(envptr, clazz, setContentViewMethod, WebViewObject );
+
+			printf( "SurfaceView: %p\n", SurfaceViewObject);
+*/
+
+			jmethodID setContentViewMethod = env->GetMethodID(envptr, clszz, "setContentView", "(Landroid/view/View;)V");
+			printf( "CVM %p\n", setContentViewMethod );
+			env->CallVoidMethod(envptr,clazz, setContentViewMethod, WebViewObject );
+
+		}
+
+
     return android_app;
 }
 
@@ -434,6 +543,83 @@ static void onLowMemory(ANativeActivity* activity) {
 }
 
 static void onWindowFocusChanged(ANativeActivity* activity, int focused) {
+
+
+			const struct JNINativeInterface * env = 0;
+			const struct JNINativeInterface ** envptr = &env;
+			const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+			jobject clazz = gapp->activity->clazz;
+			//printf( "---> clszz: %p\n", clszz );
+			const struct JNIInvokeInterface * jnii = *jniiptr;
+
+			jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+			env = (*envptr);
+
+
+			jclass SurfaceViewClass = env->FindClass(envptr, "android/view/SurfaceView");
+			jclass PictureClass = env->FindClass(envptr, "android/graphics/Picture");
+			jclass CanvasClass = env->FindClass(envptr, "android/graphics/Canvas");
+			jclass BitmapClass = env->FindClass(envptr, "android/graphics/Bitmap");
+			jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
+		
+			jmethodID createBitmap = env->GetStaticMethodID(envptr, BitmapClass, "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+			jmethodID drawMethod = env->GetMethodID(envptr, WebViewClass, "draw", "(Landroid/graphics/Canvas;)V");
+			
+			jclass bmpCfgCls = env->FindClass(envptr, "android/graphics/Bitmap$Config");
+			jmethodID bmpClsValueOfMid = env->GetStaticMethodID(envptr, bmpCfgCls, "valueOf", "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
+			jobject jBmpCfg = env->CallStaticObjectMethod(envptr, bmpCfgCls, bmpClsValueOfMid, env->NewStringUTF(envptr, "ARGB_8888"));
+
+			jobject bitmap = env->CallStaticObjectMethod( envptr, BitmapClass, createBitmap, 500, 500, jBmpCfg );
+
+
+			jmethodID canvasConstructor = env->GetMethodID(envptr, CanvasClass, "<init>", "(Landroid/graphics/Bitmap;)V");
+			printf( "Getting object\n" );
+			jobject canvas = env->NewObject(envptr, CanvasClass, canvasConstructor, bitmap );
+
+			env->CallVoidMethod( envptr, GlobalWebViewObject, drawMethod, canvas );
+			
+			printf( "PICCCCTURE MEEEETHOD: %p %p %p\n", createBitmap, jBmpCfg, bitmap );
+
+//			jclass IntBufferClass = env->FindClass(envptr, "java/nio/IntBuffer" );
+//			jmethodID createIntBuffer = env->GetStaticMethodID( envptr, IntBufferClass, "allocate", "(I)Ljava/nio/IntBuffer;");
+//			jobject buffer = env->CallStaticObjectMethod( envptr, IntBufferClass, createIntBuffer, 500*500 );
+			uint8_t * bufferbytes = malloc(500*500*4 );
+			jobject buffer = env->NewDirectByteBuffer(envptr, bufferbytes, 500*500*4 );
+
+			printf( "BUFFFER: %p\n", buffer );
+
+			jmethodID copyPixelsBufferID = env->GetMethodID( envptr, BitmapClass, "copyPixelsToBuffer", "(Ljava/nio/Buffer;)V" );
+			env->CallVoidMethod( envptr, bitmap, copyPixelsBufferID, buffer );
+			
+			int i;
+			for( i = 0; i < 500*500; i++ )
+			{
+				if( ((uint32_t*)bufferbytes)[i] != 0xffffffff )
+				printf( "%08x\n", ((uint32_t*)bufferbytes)[i] );
+			}
+
+			env->DeleteLocalRef( envptr, buffer );
+			env->DeleteLocalRef( envptr, bitmap );
+			env->DeleteLocalRef( envptr, canvas );
+
+/*
+			env->CallVoidMethod( envptr, drawID, PictureObject, CanvasObject );
+			jmethodID getWidthID = env->GetMethodID( envptr, PictureClass, "getWidth", "()I" );
+			jmethodID getHeightID = env->GetMethodID( envptr, PictureClass, "getHeight", "()I" );
+			
+			printf( "CANVAS: %p PICTURE: %d %d\n",
+				CanvasObject,
+				env->CallIntMethod( envptr, PictureObject, getWidthID ),
+				env->CallIntMethod( envptr, PictureObject, getHeightID ) );
+			if( PictureObject )
+			{
+				env->DeleteLocalRef( envptr, PictureObject );
+			}
+*/			
+//			jnii->DetachCurrentThread( jniiptr );
+	
+	
+	
     LOGV("WindowFocusChanged: %p -- %d\n", activity, focused);
     android_app_write_cmd((struct android_app*)activity->instance,
             focused ? APP_CMD_GAINED_FOCUS : APP_CMD_LOST_FOCUS);
@@ -459,7 +645,10 @@ static void onInputQueueDestroyed(ANativeActivity* activity, AInputQueue* queue)
     android_app_set_input((struct android_app*)activity->instance, NULL);
 }
 
-extern jobject WebViewObject;
+static void onNativeWindowRedrawNeeded(ANativeActivity* activity, ANativeWindow *window ) {
+
+    LOGV("onNativeWindowRedrawNeeded: %p -- %p\n", activity, window);
+}
 
 JNIEXPORT
 void ANativeActivity_onCreate(ANativeActivity* activity, void* savedState,
@@ -478,72 +667,10 @@ void ANativeActivity_onCreate(ANativeActivity* activity, void* savedState,
     activity->callbacks->onNativeWindowDestroyed = onNativeWindowDestroyed;
     activity->callbacks->onInputQueueCreated = onInputQueueCreated;
     activity->callbacks->onInputQueueDestroyed = onInputQueueDestroyed;
+	activity->callbacks->onNativeWindowRedrawNeeded = onNativeWindowRedrawNeeded;
 
     activity->instance = android_app_create(activity, savedState, savedStateSize);
 
-
-
-
-		//ALooper* looper;
-		{
-			const struct JNINativeInterface * env = 0;
-			const struct JNINativeInterface ** envptr = &env;
-			const struct JNIInvokeInterface ** jniiptr = activity->vm;
-			jobject clazz = activity->clazz;
-			printf( "---> clazz: %p\n", clazz );
-			//printf( "---> clszz: %p\n", clszz );
-			const struct JNIInvokeInterface * jnii = *jniiptr;
-
-			jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
-			env = (*envptr);
-
-
-			// Part 0 create a looper
-
-			//looper = ALooper_prepare( 0 );
-
-		//	printf( "LOOPER: %p\n", looper );
-
-	//		ALooper_acquire(looper);
-  
-			printf( "This Looper: %p\n", ALooper_forThread() );
-
-			int oFD, oEvents;
-			void * odat;
-			ALooper_pollOnce( 100, &oFD, &oEvents, &odat );
-
-			jclass clszz = env->GetObjectClass(envptr,clazz);
-
-			jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
-			//jclass niClass = env->FindClass(envptr, "android/app/NativeActivity");
-
-			jclass activityClass = env->FindClass(envptr, "android/app/Activity");
-			jmethodID activityGetContextMethod = env->GetMethodID(envptr, activityClass, "getApplicationContext", "()Landroid/content/Context;");
-			jobject contextObject = env->CallObjectMethod(envptr, clazz, activityGetContextMethod);
-
-			printf( "%p %p %p\n", activityClass, activityGetContextMethod, contextObject );
-
-			// WebView(Context context)
-		    jmethodID WebViewConstructor = env->GetMethodID(envptr, WebViewClass, "<init>", "(Landroid/content/Context;)V");
-			printf( "Getting object\n" );
-			WebViewObject = env->NewObject(envptr, WebViewClass, WebViewConstructor, contextObject );
-		    jmethodID WebViewLoadURLMethod = env->GetMethodID(envptr, WebViewClass, "loadUrl", "(Ljava/lang/String;)V");
-			printf( "******** URL: %p %p\n", WebViewObject, WebViewLoadURLMethod );
-			env->CallVoidMethod(envptr, WebViewObject, WebViewLoadURLMethod, env->NewStringUTF( envptr, "https://google.com" ) );
-
-			jmethodID setContentViewMethod = env->GetMethodID(envptr, clszz, "setContentView", "(Landroid/view/View;)V");
-			printf( "CVM %p\n", setContentViewMethod );
-			
-			env->CallVoidMethod(envptr, clazz, setContentViewMethod, WebViewObject );
-
-			printf( "WEBBBBBB %p %p %p\n", WebViewClass, WebViewConstructor, WebViewObject );
-
-
-//			jmethodID setContentViewMethod = env->GetMethodID(envptr, clszz, "setContentView", "(Landroid/view/View;)V");
-//			printf( "CVM %p\n", setContentViewMethod );
-//			env->CallVoidMethod(envptr,clazz, setContentViewMethod, WebViewObject );
-
-		}
 
 
 
