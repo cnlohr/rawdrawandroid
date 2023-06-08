@@ -185,10 +185,11 @@ Because we are doing this entirelly in the NDK, with the JNI, we won't have the 
 
 # Departures from regular rawdraw.
 
-Also, above and beyond rawdraw, you *must* implement the following two functions to handle when your apps is suspended or resumed.
+Also, above and beyond rawdraw, you *must* implement the following two functions to handle when your apps is suspended, resumed or has its window terminated.
 
 `void HandleResume();`
 `void HandleSuspend();`
+`void HandleWindowTermination();`
 
 In addition to that, the syntax of `HandleMotion(...)` is different, in that instead of the `mask` variable being a mask, it is simply updating that specific pointer.
 
