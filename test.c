@@ -231,6 +231,11 @@ void HandleResume()
 {
 	suspended = 0;
 }
+
+void HandleWindowTermination() {
+       suspended = 1;
+ }
+
 void Callback( struct CNFADriver * sd, short * out, short * in, int framesp, int framesr )
 {
 	if(suspended) return;
