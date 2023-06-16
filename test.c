@@ -18,6 +18,9 @@
 
 #include "CNFG.h"
 
+#define WEBVIEW_NATIVE_ACTIVITY_IMPLEMENTATION
+#include "webview_native_activity.h"
+
 float mountainangle;
 float mountainoffsetx;
 float mountainoffsety;
@@ -231,7 +234,7 @@ void init()
 {
 	printf( "INIT INIT INTI******************************************************\n" );
 }
-
+/*
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	printf( "**************************JNI_OnLoad******************************************************\n" );
     JNIEnv* env;
@@ -252,9 +255,40 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
     }
     return JNI_VERSION_1_6;
 }
-
+*/
 jobject GlobalWebViewObject = 0;
 jobject SurfaceViewObject;
+
+void HandleCustomEventCallbackFunction()
+{
+	struct  __attribute__((packed))
+	{
+		void (*callback)( void * ); 
+		void * opaque;
+	} gpdata;
+	int r = read(gapp->msgread, &gpdata, sizeof(gpdata) );
+	printf( "HANLDE IN %p %d\n", gpdata.opaque, r );
+	gpdata.callback( gpdata.opaque );
+}
+
+void TriggerEvent( void (*callback)(void *), void * opaque )
+{
+	struct  __attribute__((packed))
+	{
+		uint8_t data;
+		void (*callback)( void * ); 
+		void * opaque;
+	} gpdata;
+	gpdata.data = APP_CMD_CUSTOM_EVENT;
+	gpdata.callback = callback;
+	gpdata.opaque = opaque;
+	printf( "OPAQUE IN: %p\n", opaque );
+	write(gapp->msgwrite, &gpdata, sizeof(gpdata) );	
+}
+
+
+WebViewNativeActivityObject MyWebView;
+
 
 int main()
 {
@@ -262,6 +296,8 @@ int main()
 	double ThisTime;
 	double LastFPSTime = OGGetAbsoluteTime();
 	int linesegs = 0;
+
+	HandleCustomEventCallback = HandleCustomEventCallbackFunction;
 
 	CNFGBGColor = 0x000040ff;
 	CNFGSetupFullscreen( "Test Bench", 0 );
@@ -286,6 +322,8 @@ int main()
 	}
 	SetupIMU();
 
+//	CreateWebViewTrigger( &MyWebView );
+	//TriggerEvent( CreateWebViewTrigger, &MyWebView );
 
 	while(1)
 	{
@@ -302,36 +340,15 @@ int main()
 		CNFGGetDimensions( &screenx, &screeny );
 
 
-#if 0
-			const struct JNINativeInterface * env = 0;
-			const struct JNINativeInterface ** envptr = &env;
-			const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-			jobject clazz = gapp->activity->clazz;
-			printf( "---> clazz: %p\n", clazz );
-			//printf( "---> clszz: %p\n", clszz );
-			const struct JNIInvokeInterface * jnii = *jniiptr;
+		{
+		//	jclass handlerClass = jniEnv->FindClass("android/os/Handler");
+		//	jmethodID handlerConstructor = jniEnv->GetMethodID(handlerClass, "<init>", "(Landroid/os/Looper;)V");
+		//	jmethodID postMethod = jniEnv->GetMethodID(handlerClass, "post", "(Ljava/lang/Runnable;)Z");
+		//	jobject handler = jniEnv->NewObject(handlerClass, handlerConstructor, mainLooper);
+		//	jobject handler = jniEnv->NewGlobalRef(handler);
 
-			jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
-			env = (*envptr);
-
-
-			jclass SurfaceViewClass = env->FindClass(envptr, "android/view/SurfaceView");
-			jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
-			jmethodID caputrePictureMethod = env->GetMethodID(envptr, WebViewClass, "capturePicture", "()Landroid/graphics/Picture;");
-			printf( "PICCCCTURE MEEEETHOD: %p\n", caputrePictureMethod );
-			printf( "CVM %p\n", caputrePictureMethod );
-			
-			jobject PictureObject = env->CallObjectMethod(envptr, GlobalWebViewObject, caputrePictureMethod );
-			printf( "CPAM %p\n", PictureObject );
-			
-			if( PictureObject )
-			{
-				env->DeleteLocalRef( envptr, PictureObject );
-			}
-//			jnii->DetachCurrentThread( jniiptr );
-	
-#endif
-
+		
+		}
 
 		// Mesh in background
 		CNFGSetLineWidth( 9 );
@@ -400,89 +417,11 @@ int main()
 		CNFGBlitImage( randomtexturedata, 100, 600, 256, 256 );
 
 
-		
-		
-		
-	{
-			const struct JNINativeInterface * env = 0;
-			const struct JNINativeInterface ** envptr = &env;
-			const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-			jobject clazz = gapp->activity->clazz;
-			//printf( "---> clszz: %p\n", clszz );
-			const struct JNIInvokeInterface * jnii = *jniiptr;
+		uint8_t * bufferbytes = malloc(500*500*4 );
+		WebViewNativeGetPixels( &MyWebView, bufferbytes, 500, 500 );
+		CNFGBlitImage( bufferbytes, 400, 600, 500, 500 );
+		free( bufferbytes );
 
-			jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
-			env = (*envptr);
-
-			jclass SurfaceViewClass = env->FindClass(envptr, "android/view/SurfaceView");
-			jclass PictureClass = env->FindClass(envptr, "android/graphics/Picture");
-			jclass CanvasClass = env->FindClass(envptr, "android/graphics/Canvas");
-			jclass BitmapClass = env->FindClass(envptr, "android/graphics/Bitmap");
-			jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
-			jmethodID createBitmap = env->GetStaticMethodID(envptr, BitmapClass, "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
-			jmethodID drawMethod = env->GetMethodID(envptr, WebViewClass, "draw", "(Landroid/graphics/Canvas;)V");
-			jclass bmpCfgCls = env->FindClass(envptr, "android/graphics/Bitmap$Config");
-			jstring bitmap_mode = env->NewStringUTF(envptr, "ARGB_8888");
-			jmethodID bmpClsValueOfMid = env->GetStaticMethodID(envptr, bmpCfgCls, "valueOf", "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
-			jobject jBmpCfg = env->CallStaticObjectMethod(envptr, bmpCfgCls, bmpClsValueOfMid, bitmap_mode);
-			jobject bitmap = env->CallStaticObjectMethod( envptr, BitmapClass, createBitmap, 500, 500, jBmpCfg );
-			jmethodID canvasConstructor = env->GetMethodID(envptr, CanvasClass, "<init>", "(Landroid/graphics/Bitmap;)V");
-			jobject canvas = env->NewObject(envptr, CanvasClass, canvasConstructor, bitmap );
-			env->CallVoidMethod( envptr, GlobalWebViewObject, drawMethod, canvas );
-
-//			jclass IntBufferClass = env->FindClass(envptr, "java/nio/IntBuffer" );
-//			jmethodID createIntBuffer = env->GetStaticMethodID( envptr, IntBufferClass, "allocate", "(I)Ljava/nio/IntBuffer;");
-//			jobject buffer = env->CallStaticObjectMethod( envptr, IntBufferClass, createIntBuffer, 500*500 );
-			uint8_t * bufferbytes = malloc(500*500*4 );
-			jobject buffer = env->NewDirectByteBuffer(envptr, bufferbytes, 500*500*4 );
-
-			printf( "BUFFFER: %p\n", buffer );
-
-			jmethodID copyPixelsBufferID = env->GetMethodID( envptr, BitmapClass, "copyPixelsToBuffer", "(Ljava/nio/Buffer;)V" );
-			env->CallVoidMethod( envptr, bitmap, copyPixelsBufferID, buffer );
-			
-/*			int i;
-			for( i = 0; i < 500*500; i++ )
-			{
-				if( ((uint32_t*)bufferbytes)[i] != 0xffffffff )
-				printf( "%08x\n", ((uint32_t*)bufferbytes)[i] );
-			}*/
-			CNFGBlitImage( bufferbytes, 400, 600, 500, 500 );
-
-			env->DeleteLocalRef( envptr, SurfaceViewClass );
-			env->DeleteLocalRef( envptr, PictureClass );
-			env->DeleteLocalRef( envptr, CanvasClass );
-			env->DeleteLocalRef( envptr, BitmapClass );
-			env->DeleteLocalRef( envptr, WebViewClass );
-			env->DeleteLocalRef( envptr, bmpCfgCls );
-			env->DeleteLocalRef( envptr, bitmap_mode );
-//			env->DeleteLocalRef( envptr, canvasConstructor );
-	//		env->DeleteLocalRef( envptr, createBitmap );
-	//		env->DeleteLocalRef( envptr, drawMethod );
-	//		env->DeleteLocalRef( envptr, bmpClsValueOfMid );
-			env->DeleteLocalRef( envptr, bitmap );
-			env->DeleteLocalRef( envptr, canvas );
-			env->DeleteLocalRef( envptr, jBmpCfg );
-			env->DeleteLocalRef( envptr, buffer );
-			
-			free( bufferbytes );
-/*
-			env->CallVoidMethod( envptr, drawID, PictureObject, CanvasObject );
-			jmethodID getWidthID = env->GetMethodID( envptr, PictureClass, "getWidth", "()I" );
-			jmethodID getHeightID = env->GetMethodID( envptr, PictureClass, "getHeight", "()I" );
-			
-			printf( "CANVAS: %p PICTURE: %d %d\n",
-				CanvasObject,
-				env->CallIntMethod( envptr, PictureObject, getWidthID ),
-				env->CallIntMethod( envptr, PictureObject, getHeightID ) );
-			if( PictureObject )
-			{
-				env->DeleteLocalRef( envptr, PictureObject );
-			}
-*/			
-//			jnii->DetachCurrentThread( jniiptr );
-		}
-	
 		frames++;
 		//On Android, CNFGSwapBuffers must be called, and CNFGUpdateScreenWithBitmap does not have an implied framebuffer swap.
 		CNFGSwapBuffers();

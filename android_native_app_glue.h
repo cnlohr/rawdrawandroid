@@ -309,6 +309,11 @@ enum {
      * and waiting for the app thread to clean up and exit before proceeding.
      */
     APP_CMD_DESTROY,
+
+    /**
+     * Custom command to execute something from an event queue
+     */
+    APP_CMD_CUSTOM_EVENT,
 };
 
 /**
