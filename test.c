@@ -33,8 +33,6 @@ ALooper * l;
 
 WebViewNativeActivityObject MyWebView;
 
-void DoWebViewThing() {CreateWebViewTrigger( &MyWebView ); };
-
 void SetupIMU()
 {
 	sm = ASensorManager_getInstance();
@@ -233,130 +231,26 @@ void HandleResume()
 
 uint32_t randomtexturedata[256*256];
 
-void init()
-{
-	printf( "INIT INIT INTI******************************************************\n" );
-}
-/*
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
-	printf( "**************************JNI_OnLoad******************************************************\n" );
-    JNIEnv* env;
-    if ((*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_6) != JNI_OK) {
-        return JNI_ERR;
-    }
-    jclass clazz = (*env)->FindClass(env, "com/example/myapp/NativeWebView");
-    if (!clazz) {
-        return JNI_ERR;
-    }
-    static const JNINativeMethod methods[] = {
-        { "init", "()V", (void*)init },
-      //  { "loadUrl", "(Ljava/lang/String;)V", (void*)loadUrl },
-      //  { "destroy", "()V", (void*)destroy }
-    };
-    if ((*env)->RegisterNatives(env, clazz, methods, sizeof(methods) / sizeof(methods[0])) < 0) {
-        return JNI_ERR;
-    }
-    return JNI_VERSION_1_6;
-}
-*/
 jobject GlobalWebViewObject = 0;
 jobject SurfaceViewObject;
 
-void HandleCustomEventCallbackFunction()
+void CheckWebViewTitle( void * v )
 {
-	struct  __attribute__((packed))
-	{
-		void (*callback)( void * ); 
-		void * opaque;
-	} gpdata;
-	int r = read(gapp->uimsgread, &gpdata, sizeof(gpdata) );
-	printf( "HANLDE IN %p %d\n", gpdata.opaque, r );
-	gpdata.callback( gpdata.opaque );
+	static int runno = 0;
+	runno++;
+	WebViewNativeActivityObject * wvn = (WebViewNativeActivityObject*)v;
+	char * s = WebViewGetLastWindowTitle(wvn);
+	if( runno == 1 )
+		WebViewExecuteJavascript( wvn, "let i = 0;" );
+	WebViewExecuteJavascript( wvn, "document.body.innerHTML = '<HTML><BODY>' + i + '</BODY></HTML>'; document.title = 'Javascript:' + i++;" );
+	puts( s );
+	free( s );
 }
 
-void TriggerEvent( void (*callback)(void *), void * opaque )
+void SetupWebView( void * v )
 {
-	struct  __attribute__((packed))
-	{
-		uint8_t data;
-		void (*callback)( void * ); 
-		void * opaque;
-	} gpdata;
-	gpdata.data = APP_CMD_CUSTOM_EVENT;
-	gpdata.callback = callback;
-	gpdata.opaque = opaque;
-	printf( "OPAQUE IN: %p -> %d\n", opaque, gapp->uimsgwrite );
-	write(gapp->uimsgwrite, &gpdata, sizeof(gpdata) );	
-}
-
-
-
-
-pthread_t pthread_looper;
-pthread_mutex_t looper_mutex;
-
-void * LooperRoutineThread( void * v )
-{
-/*	ALooper* looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
-	ALooper_addFd(looper, android_app->msgread, LOOPER_ID_MAIN, ALOOPER_EVENT_INPUT, NULL, &android_app->cmdPollSource);
-	android_app->looper = looper;
-*/
-	pthread_mutex_unlock(&looper_mutex);
-
-	const struct JNINativeInterface * env = (struct JNINativeInterface*)gapp->activity->env; \
-	const struct JNINativeInterface ** envptr = &env; \
-	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm; \
-	const struct JNIInvokeInterface * jnii = *jniiptr; \
-	jnii->AttachCurrentThread( jniiptr, &envptr, NULL); \
-	env = (*envptr);
-
-	//static Looper 	myLooper() 
-	jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
-	jmethodID myLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "myLooper", "()Landroid/os/Looper;");
-	jmethodID PrepareMethod = env->GetStaticMethodID(envptr, LooperClass, "prepare", "()V");
-	env->CallStaticVoidMethod( envptr, LooperClass, PrepareMethod );
-	jobject myLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
-	printf( "MY LOOPER OBJECT:::::::::::::::: %p %p %p\n", myLooperMethod, PrepareMethod, myLooper );
-
-	jnii->DetachCurrentThread( jniiptr );
-	DoWebViewThing();
-}
-
-
-void SetupLooperThread()
-{	
-    pthread_mutex_init(&looper_mutex, NULL);
-    pthread_mutex_lock(&looper_mutex);
-	pthread_create( &pthread_looper, 0, LooperRoutineThread, 0 );
-}
-
-void InternalALooperCallback()
-{
-/*
-	static int i;
-	if( i ) return;
-	i = 1;
-
-	// What if we manually make a looper?
-			const struct JNINativeInterface * env = (struct JNINativeInterface*)gapp->activity->env; \
-			const struct JNINativeInterface ** envptr = &env; \
-			const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm; \
-			const struct JNIInvokeInterface * jnii = *jniiptr; \
-			jnii->AttachCurrentThread( jniiptr, &envptr, NULL); \
-			env = (*envptr);
-#if 0
-
-			jclass looperClass = env->FindClass(envptr, "android/os/Looper");
-			jmethodID handlerConstructor = env->GetMethodID(envptr, handlerClass, "<init>", "(Landroid/os/Looper;)V");
-			jmethodID postMethod = env->GetMethodID(envptr, handlerClass, "post", "(Ljava/lang/Runnable;)Z");
-			jobject handler = env->NewObject(envptr, handlerClass, handlerConstructor, gapp->looper);
-			//jobject handler2 = env->NewGlobalRef(envptr, handler);
-			printf( "%d %d %d\n", handlerClass, handlerConstructor, postMethod, handler );
-#endif
-
-
-	printf( "MAIN LOOP: %p %p\n", ALooper_forThread(), mainLooper );
-	DoWebViewThing();*/
+	WebViewNativeActivityObject * wvn = (WebViewNativeActivityObject*)v;
+	WebViewCreate( wvn, 0 );
 }
 
 int main()
@@ -365,11 +259,6 @@ int main()
 	double ThisTime;
 	double LastFPSTime = OGGetAbsoluteTime();
 	int linesegs = 0;
-
-	HandleCustomEventCallback = HandleCustomEventCallbackFunction;
-
-
-	LooperCheck( gapp, "main()" );
 
 	CNFGBGColor = 0x000040ff;
 	CNFGSetupFullscreen( "Test Bench", 0 );
@@ -393,15 +282,9 @@ int main()
 	}
 	SetupIMU();
 
-	TriggerEvent( CreateWebViewTrigger, &MyWebView );
-//	SetupLooperThread();
-		{
-sleep(1);
-			// Debug to check the Android Looper
-printf( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!MAINXXX1\n" );
-//			DoWebViewThing();
-printf( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!MAINXXX2\n" );
-		}
+	// Create webview and wait for its completion
+	RunCallbackOnUIThread( SetupWebView, &MyWebView );
+	while( !MyWebView.WebViewObject ) usleep(1);
 
 	while(1)
 	{
@@ -411,32 +294,14 @@ printf( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!MAINXXX2\n" );
 		CNFGHandleInput();
 		AccCheck();
 
+		RunCallbackOnUIThread( CheckWebViewTitle, &MyWebView );
+
 		if( suspended ) { usleep(50000); continue; }
 
 		CNFGClearFrame();
 		CNFGColor( 0xFFFFFFFF );
 		CNFGGetDimensions( &screenx, &screeny );
 
-/*
-		{
-//XXX TODO HERE
-			// Can we run arbitrary code on main thread?
-			const struct JNINativeInterface * env = (struct JNINativeInterface*)gapp->activity->env; \
-			const struct JNINativeInterface ** envptr = &env; \
-			const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm; \
-			const struct JNIInvokeInterface * jnii = *jniiptr; \
-			jnii->AttachCurrentThread( jniiptr, &envptr, NULL); \
-			env = (*envptr);
-
-			jclass handlerClass = env->FindClass(envptr, "android/os/Handler");
-			jmethodID handlerConstructor = env->GetMethodID(envptr, handlerClass, "<init>", "(Landroid/os/Looper;)V");
-			jmethodID postMethod = env->GetMethodID(envptr, handlerClass, "post", "(Ljava/lang/Runnable;)Z");
-			jobject handler = env->NewObject(envptr, handlerClass, handlerConstructor, gapp->looper);
-			//jobject handler2 = env->NewGlobalRef(envptr, handler);
-			printf( "%d %d %d\n", handlerClass, handlerConstructor, postMethod, handler );
-			jnii->DetachCurrentThread( jniiptr );
-		}
-*/
 		// Mesh in background
 		CNFGSetLineWidth( 9 );
 		DrawHeightmap();
@@ -451,11 +316,6 @@ printf( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!MAINXXX2\n" );
 		CNFGDrawText( st, 10 );
 		CNFGSetLineWidth( 2 );
 
-
-/*		CNFGTackSegment( pto[0].x, pto[0].y, pto[1].x, pto[1].y );
-		CNFGTackSegment( pto[1].x, pto[1].y, pto[2].x, pto[2].y );
-		CNFGTackSegment( pto[2].x, pto[2].y, pto[0].x, pto[0].y );
-*/
 
 		// Square behind text
 		CNFGColor( 0x303030ff );
@@ -506,7 +366,7 @@ printf( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!MAINXXX2\n" );
 
 		uint8_t * bufferbytes = malloc(500*500*4 );
 		WebViewNativeGetPixels( &MyWebView, bufferbytes, 500, 500 );
-		CNFGBlitImage( bufferbytes, 400, 600, 500, 500 );
+		CNFGBlitImage( (uint32_t*)bufferbytes, 400, 600, 500, 500 );
 		free( bufferbytes );
 
 		frames++;

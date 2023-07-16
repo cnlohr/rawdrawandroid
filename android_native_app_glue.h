@@ -364,6 +364,11 @@ app_dummy();
  */
 extern void android_main(struct android_app* app);
 
+/**
+ * Mechanism to run code on main UI thread.
+ */
+void RunCallbackOnUIThread( void (*callback)(void *), void * opaque );
+
 #ifdef __cplusplus
 }
 #endif

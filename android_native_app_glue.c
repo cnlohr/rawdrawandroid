@@ -41,6 +41,13 @@ struct android_app * gapp;
 #  define LOGV(...)  ((void)0)
 #endif
 
+
+typedef struct  __attribute__((packed))
+{
+	void (*callback)( void * ); 
+	void * opaque;
+} MainThreadCallbackProps;
+
 static int pfd[2];
 pthread_t debug_capture_thread;
 static void * debug_capture_thread_fn( void * v )
@@ -229,20 +236,15 @@ static void process_input(struct android_app* app, struct android_poll_source* s
     }
 }
 
-static void process_ui() {
-	uint8_t cmd;
-	printf( ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %p\n", gapp );
-	void LooperCheck( struct android_app * app, const char * a );
-	LooperCheck( gapp, "process_ui" );
-    read(gapp->uimsgread, &cmd, sizeof(cmd));
-	HandleCustomEventCallbackFunction();
+static int process_ui( int dummy1, int dummy2, void * dummy3 ) {
+	// Can't trust parameters in UI thread callback.
+	MainThreadCallbackProps rep;
+    read(gapp->uimsgread, &rep, sizeof(rep));
+	rep.callback( rep.opaque );
+	return 1;
 }
 
 static void process_cmd(struct android_app* app, struct android_poll_source* source) {
-printf( "^^^^^^^^^^^^^^^^^^^^^^^^^^^ PROCESS CMD\n" );
-	void LooperCheck(struct android_app * app,  const char * a );
-	LooperCheck( app, "process_cmd" );
-
     int8_t cmd = android_app_read_cmd(app);
     android_app_pre_exec_cmd(app, cmd);
     if (app->onAppCmd != NULL) app->onAppCmd(app, cmd);
@@ -318,9 +320,8 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     android_app->msgread = msgpipe[0];
     android_app->msgwrite = msgpipe[1];
 
-	void LooperCheck( struct android_app * app, const char * a );
-	LooperCheck( android_app, "app_create" );
-
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Handle calling events on the UI thread.
     int msgpipemain[2];
     if (pipe(msgpipemain)) {
         LOGE("could not create pipe: %s", strerror(errno));
@@ -328,12 +329,10 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     }
     android_app->uimsgread = msgpipemain[0];
     android_app->uimsgwrite = msgpipemain[1];
-
     ALooper * looper = ALooper_forThread();
-	ALooper * looperB = ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
-    ALooper_addFd(looper, android_app->uimsgread, LOOPER_ID_MAIN_THREAD, 0xfffffffff, process_ui, gapp);
-	printf( "LOOPER ATTACHING (UI): %p==%p %d %d\n", looper, looperB, android_app->uimsgread, android_app->uimsgwrite );
+    ALooper_addFd(looper, android_app->uimsgread, LOOPER_ID_MAIN_THREAD, ALOOPER_EVENT_INPUT, process_ui, gapp);  //NOTE: Cannot use NULL callback
     android_app->looperui = looper;
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -552,8 +551,18 @@ void ANativeActivity_onCreate(ANativeActivity* activity, void* savedState,
 	activity->callbacks->onNativeWindowRedrawNeeded = onNativeWindowRedrawNeeded;
 
     activity->instance = android_app_create(activity, savedState, savedStateSize);
-
-
-
-
 }
+
+
+
+
+
+
+void RunCallbackOnUIThread( void (*callback)(void *), void * opaque )
+{
+	MainThreadCallbackProps gpdata;
+	gpdata.callback = callback;
+	gpdata.opaque = opaque;
+	write(gapp->uimsgwrite, &gpdata, sizeof(gpdata) );	
+}
+
