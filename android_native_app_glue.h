@@ -142,6 +142,10 @@ struct android_app {
     // The ALooper associated with the app's thread.
     ALooper* looper;
 
+
+    // The ALooper associated with the main thread.
+    ALooper* looperui;
+
     // When non-NULL, this is the input queue from which the app will
     // receive user input events.
     AInputQueue* inputQueue;
@@ -169,6 +173,9 @@ struct android_app {
 
     int msgread;
     int msgwrite;
+
+	int uimsgread;
+	int uimsgwrite;
 
     pthread_t thread;
 
@@ -204,9 +211,14 @@ enum {
     LOOPER_ID_INPUT = 2,
 
     /**
+     * Start of main ALooper identifiers.
+     */
+    LOOPER_ID_MAIN_THREAD = 3,
+
+    /**
      * Start of user-defined ALooper identifiers.
      */
-    LOOPER_ID_USER = 3,
+    LOOPER_ID_USER = 4,
 };
 
 enum {

@@ -31,6 +31,9 @@ bool no_sensor_for_gyro = false;
 ASensorEventQueue* aeq;
 ALooper * l;
 
+WebViewNativeActivityObject MyWebView;
+
+void DoWebViewThing() {CreateWebViewTrigger( &MyWebView ); };
 
 void SetupIMU()
 {
@@ -266,7 +269,7 @@ void HandleCustomEventCallbackFunction()
 		void (*callback)( void * ); 
 		void * opaque;
 	} gpdata;
-	int r = read(gapp->msgread, &gpdata, sizeof(gpdata) );
+	int r = read(gapp->uimsgread, &gpdata, sizeof(gpdata) );
 	printf( "HANLDE IN %p %d\n", gpdata.opaque, r );
 	gpdata.callback( gpdata.opaque );
 }
@@ -282,13 +285,79 @@ void TriggerEvent( void (*callback)(void *), void * opaque )
 	gpdata.data = APP_CMD_CUSTOM_EVENT;
 	gpdata.callback = callback;
 	gpdata.opaque = opaque;
-	printf( "OPAQUE IN: %p\n", opaque );
-	write(gapp->msgwrite, &gpdata, sizeof(gpdata) );	
+	printf( "OPAQUE IN: %p -> %d\n", opaque, gapp->uimsgwrite );
+	write(gapp->uimsgwrite, &gpdata, sizeof(gpdata) );	
 }
 
 
-WebViewNativeActivityObject MyWebView;
 
+
+pthread_t pthread_looper;
+pthread_mutex_t looper_mutex;
+
+void * LooperRoutineThread( void * v )
+{
+/*	ALooper* looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
+	ALooper_addFd(looper, android_app->msgread, LOOPER_ID_MAIN, ALOOPER_EVENT_INPUT, NULL, &android_app->cmdPollSource);
+	android_app->looper = looper;
+*/
+	pthread_mutex_unlock(&looper_mutex);
+
+	const struct JNINativeInterface * env = (struct JNINativeInterface*)gapp->activity->env; \
+	const struct JNINativeInterface ** envptr = &env; \
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm; \
+	const struct JNIInvokeInterface * jnii = *jniiptr; \
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL); \
+	env = (*envptr);
+
+	//static Looper 	myLooper() 
+	jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
+	jmethodID myLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "myLooper", "()Landroid/os/Looper;");
+	jmethodID PrepareMethod = env->GetStaticMethodID(envptr, LooperClass, "prepare", "()V");
+	env->CallStaticVoidMethod( envptr, LooperClass, PrepareMethod );
+	jobject myLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
+	printf( "MY LOOPER OBJECT:::::::::::::::: %p %p %p\n", myLooperMethod, PrepareMethod, myLooper );
+
+	jnii->DetachCurrentThread( jniiptr );
+	DoWebViewThing();
+}
+
+
+void SetupLooperThread()
+{	
+    pthread_mutex_init(&looper_mutex, NULL);
+    pthread_mutex_lock(&looper_mutex);
+	pthread_create( &pthread_looper, 0, LooperRoutineThread, 0 );
+}
+
+void InternalALooperCallback()
+{
+/*
+	static int i;
+	if( i ) return;
+	i = 1;
+
+	// What if we manually make a looper?
+			const struct JNINativeInterface * env = (struct JNINativeInterface*)gapp->activity->env; \
+			const struct JNINativeInterface ** envptr = &env; \
+			const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm; \
+			const struct JNIInvokeInterface * jnii = *jniiptr; \
+			jnii->AttachCurrentThread( jniiptr, &envptr, NULL); \
+			env = (*envptr);
+#if 0
+
+			jclass looperClass = env->FindClass(envptr, "android/os/Looper");
+			jmethodID handlerConstructor = env->GetMethodID(envptr, handlerClass, "<init>", "(Landroid/os/Looper;)V");
+			jmethodID postMethod = env->GetMethodID(envptr, handlerClass, "post", "(Ljava/lang/Runnable;)Z");
+			jobject handler = env->NewObject(envptr, handlerClass, handlerConstructor, gapp->looper);
+			//jobject handler2 = env->NewGlobalRef(envptr, handler);
+			printf( "%d %d %d\n", handlerClass, handlerConstructor, postMethod, handler );
+#endif
+
+
+	printf( "MAIN LOOP: %p %p\n", ALooper_forThread(), mainLooper );
+	DoWebViewThing();*/
+}
 
 int main()
 {
@@ -299,6 +368,9 @@ int main()
 
 	HandleCustomEventCallback = HandleCustomEventCallbackFunction;
 
+
+	LooperCheck( gapp, "main()" );
+
 	CNFGBGColor = 0x000040ff;
 	CNFGSetupFullscreen( "Test Bench", 0 );
 	//CNFGSetup( "Test Bench", 0, 0 );
@@ -308,7 +380,6 @@ int main()
 	{
 		Heightmap[x+y*HMX] = tdPerlin2D( x, y )*8.;
 	}
-
 
 	const char * assettext = "Not Found";
 	AAsset * file = AAssetManager_open( gapp->activity->assetManager, "asset.txt", AASSET_MODE_BUFFER );
@@ -322,8 +393,15 @@ int main()
 	}
 	SetupIMU();
 
-//	CreateWebViewTrigger( &MyWebView );
-	//TriggerEvent( CreateWebViewTrigger, &MyWebView );
+	TriggerEvent( CreateWebViewTrigger, &MyWebView );
+//	SetupLooperThread();
+		{
+sleep(1);
+			// Debug to check the Android Looper
+printf( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!MAINXXX1\n" );
+//			DoWebViewThing();
+printf( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!MAINXXX2\n" );
+		}
 
 	while(1)
 	{
@@ -339,17 +417,26 @@ int main()
 		CNFGColor( 0xFFFFFFFF );
 		CNFGGetDimensions( &screenx, &screeny );
 
-
+/*
 		{
-		//	jclass handlerClass = jniEnv->FindClass("android/os/Handler");
-		//	jmethodID handlerConstructor = jniEnv->GetMethodID(handlerClass, "<init>", "(Landroid/os/Looper;)V");
-		//	jmethodID postMethod = jniEnv->GetMethodID(handlerClass, "post", "(Ljava/lang/Runnable;)Z");
-		//	jobject handler = jniEnv->NewObject(handlerClass, handlerConstructor, mainLooper);
-		//	jobject handler = jniEnv->NewGlobalRef(handler);
+//XXX TODO HERE
+			// Can we run arbitrary code on main thread?
+			const struct JNINativeInterface * env = (struct JNINativeInterface*)gapp->activity->env; \
+			const struct JNINativeInterface ** envptr = &env; \
+			const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm; \
+			const struct JNIInvokeInterface * jnii = *jniiptr; \
+			jnii->AttachCurrentThread( jniiptr, &envptr, NULL); \
+			env = (*envptr);
 
-		
+			jclass handlerClass = env->FindClass(envptr, "android/os/Handler");
+			jmethodID handlerConstructor = env->GetMethodID(envptr, handlerClass, "<init>", "(Landroid/os/Looper;)V");
+			jmethodID postMethod = env->GetMethodID(envptr, handlerClass, "post", "(Ljava/lang/Runnable;)Z");
+			jobject handler = env->NewObject(envptr, handlerClass, handlerConstructor, gapp->looper);
+			//jobject handler2 = env->NewGlobalRef(envptr, handler);
+			printf( "%d %d %d\n", handlerClass, handlerConstructor, postMethod, handler );
+			jnii->DetachCurrentThread( jniiptr );
 		}
-
+*/
 		// Mesh in background
 		CNFGSetLineWidth( 9 );
 		DrawHeightmap();

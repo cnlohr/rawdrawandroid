@@ -229,7 +229,20 @@ static void process_input(struct android_app* app, struct android_poll_source* s
     }
 }
 
+static void process_ui() {
+	uint8_t cmd;
+	printf( ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %p\n", gapp );
+	void LooperCheck( struct android_app * app, const char * a );
+	LooperCheck( gapp, "process_ui" );
+    read(gapp->uimsgread, &cmd, sizeof(cmd));
+	HandleCustomEventCallbackFunction();
+}
+
 static void process_cmd(struct android_app* app, struct android_poll_source* source) {
+printf( "^^^^^^^^^^^^^^^^^^^^^^^^^^^ PROCESS CMD\n" );
+	void LooperCheck(struct android_app * app,  const char * a );
+	LooperCheck( app, "process_cmd" );
+
     int8_t cmd = android_app_read_cmd(app);
     android_app_pre_exec_cmd(app, cmd);
     if (app->onAppCmd != NULL) app->onAppCmd(app, cmd);
@@ -243,7 +256,6 @@ static void* android_app_entry(void* param) {
     AConfiguration_fromAssetManager(android_app->config, android_app->activity->assetManager);
 
     print_cur_config(android_app);
-
     android_app->cmdPollSource.id = LOOPER_ID_MAIN;
     android_app->cmdPollSource.app = android_app;
     android_app->cmdPollSource.process = process_cmd;
@@ -306,6 +318,29 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     android_app->msgread = msgpipe[0];
     android_app->msgwrite = msgpipe[1];
 
+	void LooperCheck( struct android_app * app, const char * a );
+	LooperCheck( android_app, "app_create" );
+
+    int msgpipemain[2];
+    if (pipe(msgpipemain)) {
+        LOGE("could not create pipe: %s", strerror(errno));
+        return NULL;
+    }
+    android_app->uimsgread = msgpipemain[0];
+    android_app->uimsgwrite = msgpipemain[1];
+
+    ALooper * looper = ALooper_forThread();
+	ALooper * looperB = ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
+    ALooper_addFd(looper, android_app->uimsgread, LOOPER_ID_MAIN_THREAD, 0xfffffffff, process_ui, gapp);
+	printf( "LOOPER ATTACHING (UI): %p==%p %d %d\n", looper, looperB, android_app->uimsgread, android_app->uimsgwrite );
+    android_app->looperui = looper;
+
+
+
+
+
+
+
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_create(&android_app->thread, &attr, android_app_entry, android_app);
@@ -317,8 +352,36 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     }
     pthread_mutex_unlock(&android_app->mutex);
 
-	extern WebViewNativeActivityObject MyWebView;
-	CreateWebViewTrigger( &MyWebView );
+
+
+
+	//void DoWebViewThing();
+	//DoWebViewThing();
+
+	//void GenWebViewAttachPoint( struct android_app * papp );
+	//GenWebViewAttachPoint( android_app );
+
+	if( 0 )
+	{
+		const struct JNINativeInterface * env = 0;
+		const struct JNINativeInterface ** envptr = &env;
+		printf( "GAPP: %p\n", gapp );
+		const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+		jobject clazz = gapp->activity->clazz;
+		printf( "---> clazz: %p\n", clazz );
+		const struct JNIInvokeInterface * jnii = *jniiptr;
+		jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+		env = (*envptr);
+
+		printf( "YOU ARE ON THE MAIN THREAD\n" );
+		jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
+		jmethodID myLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "myLooper", "()Landroid/os/Looper;");
+		jmethodID LoopMethod = env->GetStaticMethodID(envptr, LooperClass, "loop", "()V");
+		jobject myLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
+		printf( "MAIN GEN LOOPER OBJECT:::::::::::::::: %p %p\n", myLooperMethod, myLooper );
+		env->CallStaticVoidMethod( envptr, LooperClass, LoopMethod );
+		printf( "CONTINUES\n" );
+	}
 
     return android_app;
 }
