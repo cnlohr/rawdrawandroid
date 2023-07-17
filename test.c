@@ -11,6 +11,9 @@
 #include <asset_manager_jni.h>
 #include <android_native_app_glue.h>
 #include <android/sensor.h>
+#include <byteswap.h>
+#include <errno.h>
+#include <fcntl.h>
 #include "CNFGAndroid.h"
 
 #define CNFG_IMPLEMENTATION
@@ -230,6 +233,8 @@ void HandleResume()
 }
 
 uint32_t randomtexturedata[256*256];
+uint32_t webviewdata[500*500];
+
 
 jobject GlobalWebViewObject = 0;
 jobject SurfaceViewObject;
@@ -240,17 +245,144 @@ void CheckWebViewTitle( void * v )
 	runno++;
 	WebViewNativeActivityObject * wvn = (WebViewNativeActivityObject*)v;
 	char * s = WebViewGetLastWindowTitle(wvn);
+
 	if( runno == 1 )
-		WebViewExecuteJavascript( wvn, "let i = 0;" );
-	WebViewExecuteJavascript( wvn, "document.body.innerHTML = '<HTML><BODY>' + i + '</BODY></HTML>'; document.title = 'Javascript:' + i++;" );
+	{
+		WebViewExecuteJavascript( wvn, "\
+		let i = 0;\
+		document.body.innerHTML = '6'; \
+		var port; \
+		function pull() {\
+			port.postMessage(\"pingpingpingping\");\
+			document.body.innerHTML = i++; \
+		}\
+		onmessage = function (e) { \
+			port = e.ports[0]; \
+			document.body.innerHTML = port; \
+			port.onmessage = function (f) { \
+				parse(f.data); \
+			} \
+		} \
+		" );
+		usleep(200000);
+		WebViewPostMessage( wvn, "YYYYXXXXZZZZWWWW", 1 );
+		usleep(200000);
+	}
+
+//	WebViewPostMessage( wvn, "YYYYXXXXZZZZWWWW", 0 );
+
+	WebViewExecuteJavascript( wvn, "\
+		/*document.body.innerHTML = '<HTML><BODY>' + i + '</BODY></HTML>';*/ \
+		/*document.title = 'Javascript:' + i++;*/ \
+		/*port.postMessage( 'zzzz' );*/ \
+		pull(); \
+	" );
 	puts( s );
 	free( s );
 }
 
+jobject g_attachLooper;
+
 void SetupWebView( void * v )
 {
 	WebViewNativeActivityObject * wvn = (WebViewNativeActivityObject*)v;
-	WebViewCreate( wvn, 0 );
+
+
+	const struct JNINativeInterface * env = 0;
+	const struct JNINativeInterface ** envptr = &env;
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+	jobject clazz = gapp->activity->clazz;
+	const struct JNIInvokeInterface * jnii = *jniiptr;
+
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+	env = (*envptr);
+
+/*
+	jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
+	jmethodID mainLooperMethod = env->GetStaticMethodID( envptr, LooperClass, "getMainLooper", "()Landroid/os/Looper;");
+	jobject attachLooper = env->CallStaticObjectMethod( envptr, LooperClass, mainLooperMethod );
+
+	attachLooper = env->NewGlobalRef(envptr, attachLooper);
+*/
+	jobject attachLooper = g_attachLooper;
+	printf( "IN LOOPER: %p\n", attachLooper );
+
+	WebViewCreate( wvn, attachLooper );
+}
+
+
+pthread_t jsthread;
+
+int msgpipeaux[2];
+
+
+static int process_aux( int dummy1, int dummy2, void * dummy3 ) {
+	// Can't trust parameters in UI thread callback.
+//	printf( "####################################################################3\n" );
+	uint8_t c = 0;
+    int r = read(msgpipeaux[0], &c, 1);
+	if( r>0 )
+		printf( "##<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %02x\n", c );
+	return 1;
+}
+
+void * JavscriptThread( void * v )
+{
+	const struct JNINativeInterface * env = 0;
+	const struct JNINativeInterface ** envptr = &env;
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+	jobject clazz = gapp->activity->clazz;
+	const struct JNIInvokeInterface * jnii = *jniiptr;
+
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+	env = (*envptr);
+
+	// Create a looper on this thread...
+	jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
+	jmethodID myLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "myLooper", "()Landroid/os/Looper;");
+	jobject thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
+	if( !thisLooper )
+	{
+		printf( "THREAD DID NOT HAVE LOOPER, but did have: %p\n", ALooper_forThread() );
+		jmethodID prepareMethod = env->GetStaticMethodID(envptr, LooperClass, "prepare", "()V");
+		env->CallStaticVoidMethod( envptr, LooperClass, prepareMethod );
+		thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
+		g_attachLooper = env->NewGlobalRef(envptr, thisLooper);
+	}
+
+	printf( "READDDDDDDDY WITH LOOPER: %p\n", g_attachLooper );
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Handle calling events on the UI thread.  You can get callbacks with RunCallbackOnUIThread.
+    if (pipe2(msgpipeaux, O_NONBLOCK | O_CLOEXEC )) {
+        fprintf(stderr,"could not create pipe: %s", strerror(errno));
+        return 0;
+    }
+    ALooper* looper = ALooper_forThread();//ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
+	printf( "NOWWWWWWWWWW %p\n", looper );
+
+
+	struct android_poll_source * ps = malloc( sizeof( struct android_poll_source ) );
+    ps->id = LOOPER_ID_USER;
+    ps->app = gapp;
+    ps->process = process_aux;
+
+    ALooper_addFd(looper, msgpipeaux[0], 7, ALOOPER_EVENT_INPUT, process_aux, ps);  //NOTE: Cannot use NULL callback
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	while(1)
+	{
+		int events;
+		struct android_poll_source* source;
+		if (ALooper_pollAll( 100, 0, &events, (void**)&source) >= 0)
+		{
+			printf( "PolllO(((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((\n" );
+		}
+	}
+}
+
+void SetupJSThread()
+{
+	pthread_create( &jsthread, 0, JavscriptThread, 0 );
 }
 
 int main()
@@ -282,6 +414,39 @@ int main()
 	}
 	SetupIMU();
 
+	SetupJSThread();
+
+	usleep(30000);
+/*
+	{
+		const struct JNINativeInterface * env = 0;
+		const struct JNINativeInterface ** envptr = &env;
+		const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+		jobject clazz = gapp->activity->clazz;
+		const struct JNIInvokeInterface * jnii = *jniiptr;
+
+		jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+		env = (*envptr);
+
+		// Create a looper on this thread...
+		jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
+		jmethodID myLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "myLooper", "()Landroid/os/Looper;");
+		//jmethodID mainLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "getMainLooper", "()Landroid/os/Looper;");
+		jobject thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
+		if( !thisLooper )
+		{
+			printf( "THREAD DID NOT HAVE LOOPER, but did have: %p\n", ALooper_forThread() );
+			jmethodID prepareMethod = env->GetStaticMethodID(envptr, LooperClass, "prepare", "()V");
+			env->CallStaticVoidMethod( envptr, LooperClass, prepareMethod );
+			thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
+			g_attachLooper = env->NewGlobalRef(envptr, thisLooper);
+		}
+
+//		thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, mainLooperMethod );
+//		g_attachLooper = env->NewGlobalRef(envptr, thisLooper);
+//		printf( "GENNED LOOPER %p <<<<<<<<<<<<<,\n", thisLooper );
+	}
+*/
 	// Create webview and wait for its completion
 	RunCallbackOnUIThread( SetupWebView, &MyWebView );
 	while( !MyWebView.WebViewObject ) usleep(1);
@@ -295,7 +460,7 @@ int main()
 		AccCheck();
 
 		RunCallbackOnUIThread( CheckWebViewTitle, &MyWebView );
-
+		sleep(1);
 		if( suspended ) { usleep(50000); continue; }
 
 		CNFGClearFrame();
@@ -360,14 +525,12 @@ int main()
 		int x, y;
 		for( y = 0; y < 256; y++ )
 		for( x = 0; x < 256; x++ )
-			randomtexturedata[x+y*256] = x | ((x*394543L+y*355+iframeno)<<8);
+			randomtexturedata[x+y*256] = x | ((x*394543L+y*355+iframeno*3)<<8);
 		CNFGBlitImage( randomtexturedata, 100, 600, 256, 256 );
 
-
-		uint8_t * bufferbytes = malloc(500*500*4 );
-		WebViewNativeGetPixels( &MyWebView, bufferbytes, 500, 500 );
-		CNFGBlitImage( (uint32_t*)bufferbytes, 400, 600, 500, 500 );
-		free( bufferbytes );
+		WebViewNativeGetPixels( &MyWebView, webviewdata, 500, 500 );
+		for( i = 0; i < 500*500; i++ ) webviewdata[i] = bswap_32( webviewdata[i] );
+		CNFGBlitImage( webviewdata, 500, 640, 500, 500 );
 
 		frames++;
 		//On Android, CNFGSwapBuffers must be called, and CNFGUpdateScreenWithBitmap does not have an implied framebuffer swap.
@@ -381,9 +544,6 @@ int main()
 			linesegs = 0;
 			LastFPSTime+=1;
 		}
-		
-		
-		
 
 	}
 

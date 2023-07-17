@@ -238,9 +238,11 @@ static void process_input(struct android_app* app, struct android_poll_source* s
 
 static int process_ui( int dummy1, int dummy2, void * dummy3 ) {
 	// Can't trust parameters in UI thread callback.
+	printf( ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n" );
 	MainThreadCallbackProps rep;
     read(gapp->uimsgread, &rep, sizeof(rep));
 	rep.callback( rep.opaque );
+	printf( "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" );
 	return 1;
 }
 
@@ -321,7 +323,7 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     android_app->msgwrite = msgpipe[1];
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Handle calling events on the UI thread.
+	// Handle calling events on the UI thread.  You can get callbacks with RunCallbackOnUIThread.
     int msgpipemain[2];
     if (pipe(msgpipemain)) {
         LOGE("could not create pipe: %s", strerror(errno));
@@ -334,12 +336,6 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     android_app->looperui = looper;
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
-
-
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_create(&android_app->thread, &attr, android_app_entry, android_app);
@@ -350,37 +346,6 @@ static struct android_app* android_app_create(ANativeActivity* activity,
         pthread_cond_wait(&android_app->cond, &android_app->mutex);
     }
     pthread_mutex_unlock(&android_app->mutex);
-
-
-
-
-	//void DoWebViewThing();
-	//DoWebViewThing();
-
-	//void GenWebViewAttachPoint( struct android_app * papp );
-	//GenWebViewAttachPoint( android_app );
-
-	if( 0 )
-	{
-		const struct JNINativeInterface * env = 0;
-		const struct JNINativeInterface ** envptr = &env;
-		printf( "GAPP: %p\n", gapp );
-		const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-		jobject clazz = gapp->activity->clazz;
-		printf( "---> clazz: %p\n", clazz );
-		const struct JNIInvokeInterface * jnii = *jniiptr;
-		jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
-		env = (*envptr);
-
-		printf( "YOU ARE ON THE MAIN THREAD\n" );
-		jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
-		jmethodID myLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "myLooper", "()Landroid/os/Looper;");
-		jmethodID LoopMethod = env->GetStaticMethodID(envptr, LooperClass, "loop", "()V");
-		jobject myLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
-		printf( "MAIN GEN LOOPER OBJECT:::::::::::::::: %p %p\n", myLooperMethod, myLooper );
-		env->CallStaticVoidMethod( envptr, LooperClass, LoopMethod );
-		printf( "CONTINUES\n" );
-	}
 
     return android_app;
 }
@@ -552,11 +517,6 @@ void ANativeActivity_onCreate(ANativeActivity* activity, void* savedState,
 
     activity->instance = android_app_create(activity, savedState, savedStateSize);
 }
-
-
-
-
-
 
 void RunCallbackOnUIThread( void (*callback)(void *), void * opaque )
 {
