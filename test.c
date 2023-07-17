@@ -253,7 +253,8 @@ void CheckWebViewTitle( void * v )
 		document.body.innerHTML = '6'; \
 		var port; \
 		function pull() {\
-			port.postMessage(\"pingpingpingping\");\
+			port.postMessage(\"pingpingpingping1\");\
+			port.postMessage(\"pingpingpingping2\");\
 			document.body.innerHTML = i++; \
 		}\
 		onmessage = function (e) { \
@@ -369,14 +370,27 @@ void * JavscriptThread( void * v )
     ALooper_addFd(looper, msgpipeaux[0], 7, ALOOPER_EVENT_INPUT, process_aux, ps);  //NOTE: Cannot use NULL callback
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+	jmethodID getQueueMethod = env->GetMethodID( envptr, LooperClass, "getQueue", "()Landroid/os/MessageQueue;" );
+	jobject   lque = env->CallObjectMethod( envptr, g_attachLooper, getQueueMethod );
+
+	jclass MessageQueueClass = env->FindClass(envptr, "android/os/MessageQueue");
+	jmethodID nextMethod = env->GetMethodID( envptr, MessageQueueClass, "next", "()Landroid/os/Message;" );
+
 	while(1)
 	{
 		int events;
 		struct android_poll_source* source;
-		if (ALooper_pollAll( 100, 0, &events, (void**)&source) >= 0)
+		if (ALooper_pollAll( 1, 0, &events, (void**)&source) >= 0)
 		{
 			printf( "PolllO(((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((\n" );
 		}
+
+		jobject msg = env->CallObjectMethod( envptr, lque, nextMethod );
+		printf( "MESSAGE!\n" );
+		//jmethodID loopMethod = env->GetStaticMethodID(envptr, LooperClass, "loop", "()V");
+		//MessageQueue queue = me.mQueue;
+		//env->CallStaticVoidMethod( envptr, LooperClass, loopMethod );
+		//public MessageQueue getQueue ()
 	}
 }
 
