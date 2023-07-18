@@ -314,7 +314,7 @@ char * WebViewGetLastWindowTitle( WebViewNativeActivityObject * obj )
 	jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
 	jmethodID getTitle = env->GetMethodID(envptr, WebViewClass, "getTitle", "()Ljava/lang/String;");
 	jobject titleObject = env->CallObjectMethod( envptr, obj->WebViewObject, getTitle );
-	const char *nativeString = strdup( env->GetStringUTFChars(envptr, titleObject, 0) );
+	char *nativeString = strdup( env->GetStringUTFChars(envptr, titleObject, 0) );
 	env->DeleteLocalRef( envptr, titleObject );
 	env->DeleteLocalRef( envptr, WebViewClass );
 

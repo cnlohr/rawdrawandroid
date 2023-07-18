@@ -327,7 +327,7 @@ void PrintClassOfObject( jobject bundle )
 	jclass clazzz = env->GetObjectClass( envptr, clsObj );
 	mid = env->GetMethodID(envptr, clazzz, "getName", "()Ljava/lang/String;");
 	jstring strObj = (jstring)env->CallObjectMethod( envptr, clsObj, mid);
-	const char *name = strdup( env->GetStringUTFChars( envptr, strObj, 0) );
+	char *name = strdup( env->GetStringUTFChars( envptr, strObj, 0) );
 	printf( "Class type: %s\n", name );
 
 	env->DeleteLocalRef( envptr, myclass );
@@ -351,7 +351,7 @@ void PrintObjectString( jobject bundle )
 	jclass myclass = env->GetObjectClass( envptr, bundle );
 	jmethodID toStringMethod = env->GetMethodID( envptr, myclass, "toString", "()Ljava/lang/String;");
 	jstring strObjDescr = (jstring)env->CallObjectMethod( envptr, bundle, toStringMethod);
-	const char *descr = strdup( env->GetStringUTFChars( envptr, strObjDescr, 0) );
+	char *descr = strdup( env->GetStringUTFChars( envptr, strObjDescr, 0) );
 	printf( "String: %s\n", descr );
 
 	env->DeleteLocalRef( envptr, myclass );
@@ -439,9 +439,20 @@ void * JavscriptThread( void * v )
 	//org.chromium.content_public.browser.MessagePayload
 	// chromium/content/browser/MessagePayloadJni.java
 	// org/chromium/content_public/browser/MessagePayload
-	//jclass MessagePayloadClass = env->FindClass( envptr, "chromium/content_public/browser/MessagePayload" );
+	// org/chromium/content_public/browser/MessagePayload
+	// org/chromium/content/browser/MessagePayloadJni
+//	jclass MessagePayloadClass = env->FindClass( envptr, "org/chromium/content/browser/MessagePayloadJni" );
+//	printf( "AA %p\n", MessagePayloadClass );
+//	exit(5);
 //	jmethodID getMessageAsStringMethod = env->GetMethodID( envptr, MessagePayloadClass, "getAsString", "()Ljava/lang/String;" );
 	
+	//https://stackoverflow.com/questions/76716355/acessing-messagepayloadjni-class-in-jni
+	//https://chromium.googlesource.com/chromium/src/+/refs/heads/main/content/public/android/java/src/org/chromium/content/browser/MessagePayloadJni.java
+	//https://chromium.googlesource.com/chromium/src/+/refs/heads/main/content/public/android/java/src/org/chromium/content/browser/AppWebMessagePort.java
+	//https://chromium.googlesource.com/chromium/src/+/refs/heads/main/content/public/android/java/src/org/chromium/content_public/browser/MessagePayload.java
+	//https://source.chromium.org/chromium/chromium/src/+/refs/heads/main:content/public/android/java/src/org/chromium/content_public/browser/MessagePayload.java;l=16;drc=636048a55ca7e2e35d5a15ba10d64b03dfe8c588;bpv=1;bpt=1
+	//
+
 	while(1)
 	{
 		int events;
@@ -454,15 +465,66 @@ void * JavscriptThread( void * v )
 		jobject msg = env->CallObjectMethod( envptr, lque, nextMethod );
 		jobject innerObj = env->GetObjectField( envptr, msg, objid );
 		jobject MessagePaypload = env->GetObjectField( envptr, innerObj, pairfirst );
-		PrintClassOfObject(MessagePaypload);
-		PrintObjectString( MessagePaypload );
+		jobject MessageSecond = env->GetObjectField( envptr, innerObj, pairsecond );
 		// MessagePayload is a org.chromium.content_public.browser.MessagePayload
 
 		jclass mpclass = env->GetObjectClass( envptr, MessagePaypload );
-		jmethodID getMessageAsStringMethod = env->GetMethodID( envptr, mpclass, "getAsString", "()Ljava/lang/String;" );
+#if 0
+
+		printf( "OBJECTS:\n" );
+		PrintClassOfObject(MessagePaypload);
+		PrintObjectString( MessagePaypload );
+		printf( "SECOND:\n");
+		PrintClassOfObject(MessageSecond);
+		PrintObjectString( MessageSecond );
+
+        jmethodID midGetClass = env->GetMethodID( envptr, mpclass, "getClass", "()Ljava/lang/Class;");
+		jclass ClassClass = env->FindClass(envptr, "java/lang/Class");
+
+        jobject clsObj = env->CallObjectMethod( envptr, MessagePaypload, midGetClass);
+		printf( "clsObj: %p\n", clsObj );
+		jmethodID getMethodsMethod = env->GetMethodID( envptr, ClassClass, "getMethods","()[Ljava/lang/reflect/Method;");
+		jobject jobjArray = env->CallObjectMethod( envptr, clsObj, getMethodsMethod );
 
 
-		jstring strObjDescr = (jstring)env->CallObjectMethod( envptr, MessagePaypload, getMessageAsStringMethod);
+		jmethodID getFieldsMethod = env->GetMethodID( envptr, ClassClass, "getFields","()[Ljava/lang/reflect/Field;");
+		jobject jobjArrayFields = env->CallObjectMethod( envptr, clsObj, getFieldsMethod );
+
+
+        jsize len = env->GetArrayLength(envptr, jobjArray);
+        jsize i;
+
+        for (i = 0 ; i < len ; i++) {
+            jobject _strMethod = env->GetObjectArrayElement( envptr, jobjArray , i) ;
+            jclass _methodClazz = env->GetObjectClass(envptr, _strMethod) ;
+            jmethodID mid = env->GetMethodID(envptr, _methodClazz , "getName" , "()Ljava/lang/String;") ;
+            jstring _name = (jstring)env->CallObjectMethod( envptr, _strMethod , mid ) ;
+            const char *str = env->GetStringUTFChars(envptr, _name, 0);
+            printf("%s\n", str);
+            env->ReleaseStringUTFChars(envptr, _name, str);
+        }
+		printf( "----------\n" );
+        len = env->GetArrayLength(envptr, jobjArrayFields);
+
+        for (i = 0 ; i < len ; i++) {
+            jobject _strMethod = env->GetObjectArrayElement( envptr, jobjArrayFields , i) ;
+            jclass _methodClazz = env->GetObjectClass(envptr, _strMethod) ;
+            jmethodID mid = env->GetMethodID(envptr, _methodClazz , "getName" , "()Ljava/lang/String;") ;
+            jstring _name = (jstring)env->CallObjectMethod( envptr, _strMethod , mid ) ;
+            const char *str = env->GetStringUTFChars(envptr, _name, 0);
+            printf("%s\n", str);
+            env->ReleaseStringUTFChars(envptr, _name, str);
+        }
+#endif
+		//exit( 0 );
+
+//		jmethodID getMessageAsStringMethod = env->GetMethodID( envptr, mpclass, "getAsString", "()Ljava/lang/String;" );
+//		jstring strObjDescr = (jstring)env->CallObjectMethod( envptr, mpclass, getMessageAsStringMethod);
+
+		jfieldID mstrf  = env->GetFieldID( envptr, mpclass, "b", "Ljava/lang/String;" );
+		printf( "MSTRF: %p\n", mstrf );
+		jstring strObjDescr = (jstring)env->GetObjectField(envptr, MessagePaypload, mstrf );
+
 		const char *descr = strdup( env->GetStringUTFChars( envptr, strObjDescr, 0) );
 		printf( "String Out: %s\n", descr );
 
