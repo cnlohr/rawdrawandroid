@@ -240,6 +240,7 @@ void HandleResume()
 {
 	suspended = 0;
 }
+
 void Callback( struct CNFADriver * sd, short * out, short * in, int framesp, int framesr )
 {
 	memset(out, 0, framesp*sizeof(uint16_t));
@@ -408,7 +409,9 @@ int main( int argc, char ** argv )
 	}
 
 	SetupIMU();
-	InitCNFAAndroid( Callback, "A Name", SAMPLE_RATE, 0, 1, 0, SAMPLE_COUNT, 0, 0, 0 );
+	
+	// Disabled, for now.
+	//InitCNFAAndroid( Callback, "A Name", SAMPLE_RATE, 0, 1, 0, SAMPLE_COUNT, 0, 0, 0 );
 
 	SetupJSThread();
 
