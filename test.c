@@ -38,7 +38,7 @@ WebViewNativeActivityObject MyWebView;
 
 void SetupIMU()
 {
-	sm = ASensorManager_getInstance();
+	sm = ASensorManager_getInstanceForPackage("gyroscope");
 	as = ASensorManager_getDefaultSensor( sm, ASENSOR_TYPE_GYROSCOPE );
 	no_sensor_for_gyro = as == NULL;
 	l = ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
@@ -49,7 +49,6 @@ void SetupIMU()
 	}
 
 }
-
 
 float accx, accy, accz;
 int accs;
@@ -241,10 +240,7 @@ void HandleThisWindowTermination()
 
 uint32_t randomtexturedata[256*256];
 uint32_t webviewdata[500*500];
-
-
-jobject GlobalWebViewObject = 0;
-jobject SurfaceViewObject;
+char fromJSBuffer[128];
 
 void CheckWebView( void * v )
 {
@@ -255,7 +251,8 @@ void CheckWebView( void * v )
 	runno++;
 	if( runno == 1 )
 	{
-		WebViewPostMessage( wvn, "...", 1 );
+		// The attach (initial) message payload has no meaning.
+		WebViewPostMessage( wvn, "", 1 );
 	}
 	else
 	{
@@ -345,10 +342,9 @@ void * JavscriptThread( void * v )
 		jstring strObjDescr = (jstring)env->GetObjectField(envptr, MessagePayload, mstrf );
 
 		const char *descr = env->GetStringUTFChars( envptr, strObjDescr, 0);
-		printf( "String Out: %s\n", descr );
+		snprintf( fromJSBuffer, sizeof( fromJSBuffer)-1, "WebMessage: %s\n", descr );
 
         env->ReleaseStringUTFChars(envptr, strObjDescr, descr);
-
 		env->DeleteLocalRef( envptr, mpclass );
 		env->DeleteLocalRef( envptr, msg );
 		env->DeleteLocalRef( envptr, strObjDescr );
@@ -390,6 +386,7 @@ int main( int argc, char ** argv )
 		temp[fileLength] = 0;
 		assettext = temp;
 	}
+
 	SetupIMU();
 
 	SetupJSThread();
@@ -455,11 +452,11 @@ int main( int argc, char ** argv )
 		// Green triangles
 		CNFGPenX = 0;
 		CNFGPenY = 0;
+		CNFGColor( 0x00FF00FF );
 
 		for( i = 0; i < 400; i++ )
 		{
 			RDPoint pp[3];
-			CNFGColor( 0x00FF00FF );
 			pp[0].x = (short)(50*sin((float)(i+iframeno)*.01) + (i%20)*30);
 			pp[0].y = (short)(50*cos((float)(i+iframeno)*.01) + (i/20)*20)+700;
 			pp[1].x = (short)(20*sin((float)(i+iframeno)*.01) + (i%20)*30);
@@ -468,6 +465,11 @@ int main( int argc, char ** argv )
 			pp[2].y = (short)(30*cos((float)(i+iframeno)*.01) + (i/20)*20)+700;
 			CNFGTackPoly( pp, 3 );
 		}
+
+		// Last WebMessage
+		CNFGColor( 0xFFFFFFFF );
+		CNFGPenX = 0; CNFGPenY = 900;
+		CNFGDrawText( fromJSBuffer, 6 );
 
 		int x, y;
 		for( y = 0; y < 256; y++ )

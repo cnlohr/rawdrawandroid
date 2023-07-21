@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script>
+
+let i = 0;
+
+var webMessagePort;
+
+function SendMessageToC() {
+	if( webMessagePort )
+	{
+		webMessagePort.postMessage( "js->c: " + i );
+		document.getElementById( "counter1" ).innerHTML = i++;
+	}
+	else
+	{
+		document.getElementById( "counter1" ).innerHTML = "no port connected";
+	}
+}
+
+onmessage = function (e) {
+	webMessagePort = e.ports[0];
+
+	webMessagePort.onmessage = function (f)
+	{
+		document.getElementById( "counter2" ).innerHTML = f.data;
+	}
+}
+
+</script>
+</head>
+<body>
+Test page
+<br>
+<div ID=counter1></div>
+<br>
+<div ID=counter2></div>
+</body>
+</html>
+
