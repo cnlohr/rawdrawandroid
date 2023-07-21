@@ -493,7 +493,7 @@ int main( int argc, char ** argv )
 
 		// Last WebMessage
 		CNFGColor( 0xFFFFFFFF );
-		CNFGPenX = 0; CNFGPenY = 900;
+		CNFGPenX = 0; CNFGPenY = 100;
 		CNFGDrawText( fromJSBuffer, 6 );
 
 		int x, y;

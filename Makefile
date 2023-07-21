@@ -31,7 +31,7 @@ CFLAGS += -fvisibility=hidden
 LDFLAGS += -s
 
 # For C++
-LDFLAGS += -static-libstdc++
+# LDFLAGS += -static-libstdc++
 # $(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/libc.a
 
 ANDROID_FULLSCREEN?=y
