@@ -43,8 +43,6 @@ const uint16_t SAMPLE_COUNT = 512;
 uint32_t stream_offset = 0;
 uint16_t audio_frequency;
 
->>>>>>> 10c6657dc2f556fd600cbca85da32919d8d95a5f
-
 void SetupIMU()
 {
 	sm = ASensorManager_getInstanceForPackage("gyroscope");
