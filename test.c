@@ -16,9 +16,11 @@
 #include <fcntl.h>
 #include "CNFGAndroid.h"
 
+#define CNFA_IMPLEMENTATION
 #define CNFG_IMPLEMENTATION
 #define CNFG3D
 
+#include "cnfa/CNFA.h"
 #include "CNFG.h"
 
 #define WEBVIEW_NATIVE_ACTIVITY_IMPLEMENTATION
@@ -35,6 +37,13 @@ ASensorEventQueue* aeq;
 ALooper * l;
 
 WebViewNativeActivityObject MyWebView;
+
+const uint32_t SAMPLE_RATE = 44100;
+const uint16_t SAMPLE_COUNT = 512;
+uint32_t stream_offset = 0;
+uint16_t audio_frequency;
+
+>>>>>>> 10c6657dc2f556fd600cbca85da32919d8d95a5f
 
 void SetupIMU()
 {
@@ -88,6 +97,7 @@ int lastmask = 0;
 int lastkey, lastkeydown;
 
 static int keyboard_up;
+uint8_t buttonstate[8];
 
 void HandleKey( int keycode, int bDown )
 {
@@ -100,6 +110,7 @@ void HandleKey( int keycode, int bDown )
 
 void HandleButton( int x, int y, int button, int bDown )
 {
+	buttonstate[button] = bDown;
 	lastbid = button;
 	lastbuttonx = x;
 	lastbuttony = y;
@@ -230,6 +241,18 @@ void HandleSuspend()
 void HandleResume()
 {
 	suspended = 0;
+}
+void Callback( struct CNFADriver * sd, short * out, short * in, int framesp, int framesr )
+{
+	memset(out, 0, framesp*sizeof(uint16_t));
+	if(suspended) return;
+	if(!buttonstate[1]) return; // play audio only if ~touching with two fingers
+	audio_frequency = 440;
+	for(uint32_t i = 0; i < framesp; i++) {
+		int16_t sample = INT16_MAX * sin(audio_frequency*(2*M_PI)*(stream_offset+i)/SAMPLE_RATE);
+		out[i] = sample;
+	}
+	stream_offset += framesp;
 }
 
 void HandleThisWindowTermination()
@@ -387,6 +410,7 @@ int main( int argc, char ** argv )
 	}
 
 	SetupIMU();
+	InitCNFAAndroid( Callback, "A Name", SAMPLE_RATE, 0, 1, 0, SAMPLE_COUNT, 0, 0, 0 );
 
 	SetupJSThread();
 

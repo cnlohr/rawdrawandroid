@@ -1,3 +1,6 @@
 [submodule "rawdraw"]
 	path = rawdraw
 	url = https://github.com/cntools/rawdraw
+[submodule "cnfa"]
+	path = cnfa
+	url = git@github.com:cntools/cnfa.git
