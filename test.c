@@ -11,12 +11,18 @@
 #include <android/asset_manager_jni.h>
 #include <android_native_app_glue.h>
 #include <android/sensor.h>
+#include <byteswap.h>
+#include <errno.h>
+#include <fcntl.h>
 #include "CNFGAndroid.h"
 
 #define CNFG_IMPLEMENTATION
 #define CNFG3D
 
 #include "CNFG.h"
+
+#define WEBVIEW_NATIVE_ACTIVITY_IMPLEMENTATION
+#include "webview_native_activity.h"
 
 float mountainangle;
 float mountainoffsetx;
@@ -28,10 +34,11 @@ bool no_sensor_for_gyro = false;
 ASensorEventQueue* aeq;
 ALooper * l;
 
+WebViewNativeActivityObject MyWebView;
 
 void SetupIMU()
 {
-	sm = ASensorManager_getInstance();
+	sm = ASensorManager_getInstanceForPackage("gyroscope");
 	as = ASensorManager_getDefaultSensor( sm, ASENSOR_TYPE_GYROSCOPE );
 	no_sensor_for_gyro = as == NULL;
 	l = ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
@@ -225,7 +232,131 @@ void HandleResume()
 	suspended = 0;
 }
 
+void HandleThisWindowTermination()
+{
+	suspended = 1;
+}
+
+
 uint32_t randomtexturedata[256*256];
+uint32_t webviewdata[500*500];
+char fromJSBuffer[128];
+
+void CheckWebView( void * v )
+{
+	static int runno = 0;
+	WebViewNativeActivityObject * wvn = (WebViewNativeActivityObject*)v;
+	if( WebViewGetProgress( wvn ) != 100 ) return;
+
+	runno++;
+	if( runno == 1 )
+	{
+		// The attach (initial) message payload has no meaning.
+		WebViewPostMessage( wvn, "", 1 );
+	}
+	else
+	{
+		// Invoke JavaScript, which calls a function to send a webmessage
+		// back into C land.
+		WebViewExecuteJavascript( wvn, "SendMessageToC();" );
+		
+		// Send a WebMessage into the JavaScript code.
+		char st[128];
+		sprintf( st, "Into JavaScript %d\n", runno );
+		WebViewPostMessage( wvn, st, 0 );
+	}
+}
+
+jobject g_attachLooper;
+
+void SetupWebView( void * v )
+{
+	WebViewNativeActivityObject * wvn = (WebViewNativeActivityObject*)v;
+
+
+	const struct JNINativeInterface * env = 0;
+	const struct JNINativeInterface ** envptr = &env;
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+	const struct JNIInvokeInterface * jnii = *jniiptr;
+
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+	env = (*envptr);
+
+	while( g_attachLooper == 0 ) usleep(1);
+	WebViewCreate( wvn, "file:///android_asset/test.html", g_attachLooper, 500, 500 );
+	//WebViewCreate( wvn, "about:blank", g_attachLooper, 500, 500 );
+}
+
+
+pthread_t jsthread;
+
+void * JavscriptThread( void * v )
+{
+	const struct JNINativeInterface * env = 0;
+	const struct JNINativeInterface ** envptr = &env;
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+	const struct JNIInvokeInterface * jnii = *jniiptr;
+
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+	env = (*envptr);
+
+	// Create a looper on this thread...
+	jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
+	jmethodID myLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "myLooper", "()Landroid/os/Looper;");
+	jobject thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
+	if( !thisLooper )
+	{
+		jmethodID prepareMethod = env->GetStaticMethodID(envptr, LooperClass, "prepare", "()V");
+		env->CallStaticVoidMethod( envptr, LooperClass, prepareMethod );
+		thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
+		g_attachLooper = env->NewGlobalRef(envptr, thisLooper);
+	}
+
+	jmethodID getQueueMethod = env->GetMethodID( envptr, LooperClass, "getQueue", "()Landroid/os/MessageQueue;" );
+	jobject   lque = env->CallObjectMethod( envptr, g_attachLooper, getQueueMethod );
+
+	jclass MessageQueueClass = env->FindClass(envptr, "android/os/MessageQueue");
+	jmethodID nextMethod = env->GetMethodID( envptr, MessageQueueClass, "next", "()Landroid/os/Message;" );
+
+	jclass MessageClass = env->FindClass(envptr, "android/os/Message");
+    jfieldID objid = env->GetFieldID( envptr, MessageClass, "obj", "Ljava/lang/Object;" );
+
+	jclass PairClass = env->FindClass(envptr, "android/util/Pair");
+    jfieldID pairfirst  = env->GetFieldID( envptr, PairClass, "first", "Ljava/lang/Object;" );
+	
+	while(1)
+	{
+
+		// Instead of using Looper::loop(), we just call next on the looper object.
+
+		jobject msg = env->CallObjectMethod( envptr, lque, nextMethod );
+		jobject innerObj = env->GetObjectField( envptr, msg, objid );
+		jobject MessagePayload = env->GetObjectField( envptr, innerObj, pairfirst );
+		// MessagePayload is a org.chromium.content_public.browser.MessagePayload
+
+		jclass mpclass = env->GetObjectClass( envptr, MessagePayload );
+
+		// Get field "b" which is the web message payload.
+		// If you are using binary sockets, it will be in `c` and be a byte array.
+		jfieldID mstrf  = env->GetFieldID( envptr, mpclass, "b", "Ljava/lang/String;" );
+		jstring strObjDescr = (jstring)env->GetObjectField(envptr, MessagePayload, mstrf );
+
+		const char *descr = env->GetStringUTFChars( envptr, strObjDescr, 0);
+		snprintf( fromJSBuffer, sizeof( fromJSBuffer)-1, "WebMessage: %s\n", descr );
+
+        env->ReleaseStringUTFChars(envptr, strObjDescr, descr);
+		env->DeleteLocalRef( envptr, mpclass );
+		env->DeleteLocalRef( envptr, msg );
+		env->DeleteLocalRef( envptr, strObjDescr );
+		env->DeleteLocalRef( envptr, innerObj );
+		env->DeleteLocalRef( envptr, MessagePayload );
+	}
+}
+
+void SetupJSThread()
+{
+	pthread_create( &jsthread, 0, JavscriptThread, 0 );
+}
 
 int main( int argc, char ** argv )
 {
@@ -235,14 +366,14 @@ int main( int argc, char ** argv )
 
 	CNFGBGColor = 0x000040ff;
 	CNFGSetupFullscreen( "Test Bench", 0 );
-	//CNFGSetup( "Test Bench", 0, 0 );
+	
+	HandleWindowTermination = HandleThisWindowTermination;
 
 	for( x = 0; x < HMX; x++ )
 	for( y = 0; y < HMY; y++ )
 	{
 		Heightmap[x+y*HMX] = tdPerlin2D( x, y )*8.;
 	}
-
 
 	const char * assettext = "Not Found";
 	AAsset * file = AAssetManager_open( gapp->activity->assetManager, "asset.txt", AASSET_MODE_BUFFER );
@@ -254,7 +385,14 @@ int main( int argc, char ** argv )
 		temp[fileLength] = 0;
 		assettext = temp;
 	}
+
 	SetupIMU();
+
+	SetupJSThread();
+
+	// Create webview and wait for its completion
+	RunCallbackOnUIThread( SetupWebView, &MyWebView );
+	while( !MyWebView.WebViewObject ) usleep(1);
 
 	while(1)
 	{
@@ -265,6 +403,9 @@ int main( int argc, char ** argv )
 		AccCheck();
 
 		if( suspended ) { usleep(50000); continue; }
+
+		RunCallbackOnUIThread( (void(*)(void*))WebViewRequestRenderToCanvas, &MyWebView );
+		RunCallbackOnUIThread( CheckWebView, &MyWebView );
 
 		CNFGClearFrame();
 		CNFGColor( 0xFFFFFFFF );
@@ -283,12 +424,6 @@ int main( int argc, char ** argv )
 		sprintf( st, "%dx%d %d %d %d %d %d %d\n%d %d\n%5.2f %5.2f %5.2f %d", screenx, screeny, lastbuttonx, lastbuttony, lastmotionx, lastmotiony, lastkey, lastkeydown, lastbid, lastmask, accx, accy, accz, accs );
 		CNFGDrawText( st, 10 );
 		CNFGSetLineWidth( 2 );
-
-
-/*		CNFGTackSegment( pto[0].x, pto[0].y, pto[1].x, pto[1].y );
-		CNFGTackSegment( pto[1].x, pto[1].y, pto[2].x, pto[2].y );
-		CNFGTackSegment( pto[2].x, pto[2].y, pto[0].x, pto[0].y );
-*/
 
 		// Square behind text
 		CNFGColor( 0x303030ff );
@@ -315,11 +450,11 @@ int main( int argc, char ** argv )
 		// Green triangles
 		CNFGPenX = 0;
 		CNFGPenY = 0;
+		CNFGColor( 0x00FF00FF );
 
 		for( i = 0; i < 400; i++ )
 		{
 			RDPoint pp[3];
-			CNFGColor( 0x00FF00FF );
 			pp[0].x = (short)(50*sin((float)(i+iframeno)*.01) + (i%20)*30);
 			pp[0].y = (short)(50*cos((float)(i+iframeno)*.01) + (i/20)*20)+700;
 			pp[1].x = (short)(20*sin((float)(i+iframeno)*.01) + (i%20)*30);
@@ -329,11 +464,19 @@ int main( int argc, char ** argv )
 			CNFGTackPoly( pp, 3 );
 		}
 
+		// Last WebMessage
+		CNFGColor( 0xFFFFFFFF );
+		CNFGPenX = 0; CNFGPenY = 900;
+		CNFGDrawText( fromJSBuffer, 6 );
+
 		int x, y;
 		for( y = 0; y < 256; y++ )
 		for( x = 0; x < 256; x++ )
-			randomtexturedata[x+y*256] = x | ((x*394543L+y*355+iframeno)<<8);
+			randomtexturedata[x+y*256] = x | ((x*394543L+y*355+iframeno*3)<<8);
 		CNFGBlitImage( randomtexturedata, 100, 600, 256, 256 );
+
+		WebViewNativeGetPixels( &MyWebView, webviewdata, 500, 500 );
+		CNFGBlitImage( webviewdata, 500, 640, 500, 500 );
 
 		frames++;
 		//On Android, CNFGSwapBuffers must be called, and CNFGUpdateScreenWithBitmap does not have an implied framebuffer swap.

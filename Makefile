@@ -20,8 +20,11 @@ SRC?=test.c
 #Your app should (though not necessarily) support all the way back to Android 22. 
 ANDROIDVERSION?=30
 ANDROIDTARGET?=$(ANDROIDVERSION)
-CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall
-LDFLAGS?=-Wl,--gc-sections -Wl,-Map=output.map
+CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
+LDFLAGS?=-Wl,--gc-sections -Wl,-Map=output.map -s
+ANDROID_FULLSCREEN?=y
+ADB?=adb
+UNAME := $(shell uname)
 
 # For really tight compiles....
 CFLAGS += -fvisibility=hidden

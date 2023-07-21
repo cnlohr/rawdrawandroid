@@ -25,6 +25,10 @@
 
 #include "android_native_app_glue.h"
 #include <android/log.h>
+#include <android/native_activity.h>
+
+#include "webview_native_activity.h"
+struct android_app * gapp;
 
 #define LOGI(...) ((void)printf(__VA_ARGS__))
 #define LOGE(...) ((void)printf(__VA_ARGS__))
@@ -36,6 +40,13 @@
 #else
 #  define LOGV(...)  ((void)0)
 #endif
+
+
+typedef struct  __attribute__((packed))
+{
+	void (*callback)( void * ); 
+	void * opaque;
+} MainThreadCallbackProps;
 
 static int pfd[2];
 pthread_t debug_capture_thread;
@@ -225,6 +236,14 @@ static void process_input(struct android_app* app, struct android_poll_source* s
     }
 }
 
+static int process_ui( int dummy1, int dummy2, void * dummy3 ) {
+	// Can't trust parameters in UI thread callback.
+	MainThreadCallbackProps rep;
+    read(gapp->uimsgread, &rep, sizeof(rep));
+	rep.callback( rep.opaque );
+	return 1;
+}
+
 static void process_cmd(struct android_app* app, struct android_poll_source* source) {
     int8_t cmd = android_app_read_cmd(app);
     android_app_pre_exec_cmd(app, cmd);
@@ -239,7 +258,6 @@ static void* android_app_entry(void* param) {
     AConfiguration_fromAssetManager(android_app->config, android_app->activity->assetManager);
 
     print_cur_config(android_app);
-
     android_app->cmdPollSource.id = LOOPER_ID_MAIN;
     android_app->cmdPollSource.app = android_app;
     android_app->cmdPollSource.process = process_cmd;
@@ -248,8 +266,7 @@ static void* android_app_entry(void* param) {
     android_app->inputPollSource.process = process_input;
 
     ALooper* looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
-    ALooper_addFd(looper, android_app->msgread, LOOPER_ID_MAIN, ALOOPER_EVENT_INPUT, NULL,
-            &android_app->cmdPollSource);
+    ALooper_addFd(looper, android_app->msgread, LOOPER_ID_MAIN, ALOOPER_EVENT_INPUT, NULL, &android_app->cmdPollSource);
     android_app->looper = looper;
 
     pthread_mutex_lock(&android_app->mutex);
@@ -289,7 +306,6 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     dup2(pfd[1], 2);
     pthread_create(&debug_capture_thread, &attr, debug_capture_thread_fn, android_app);
 
-
     if (savedState != NULL) {
         android_app->savedState = malloc(savedStateSize);
         android_app->savedStateSize = savedStateSize;
@@ -303,6 +319,20 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     }
     android_app->msgread = msgpipe[0];
     android_app->msgwrite = msgpipe[1];
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Handle calling events on the UI thread.  You can get callbacks with RunCallbackOnUIThread.
+    int msgpipemain[2];
+    if (pipe(msgpipemain)) {
+        LOGE("could not create pipe: %s", strerror(errno));
+        return NULL;
+    }
+    android_app->uimsgread = msgpipemain[0];
+    android_app->uimsgwrite = msgpipemain[1];
+    ALooper * looper = ALooper_forThread();
+    ALooper_addFd(looper, android_app->uimsgread, LOOPER_ID_MAIN_THREAD, ALOOPER_EVENT_INPUT, process_ui, gapp);  //NOTE: Cannot use NULL callback
+    android_app->looperui = looper;
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -460,6 +490,10 @@ static void onInputQueueDestroyed(ANativeActivity* activity, AInputQueue* queue)
     android_app_set_input((struct android_app*)activity->instance, NULL);
 }
 
+static void onNativeWindowRedrawNeeded(ANativeActivity* activity, ANativeWindow *window ) {
+    LOGV("onNativeWindowRedrawNeeded: %p -- %p\n", activity, window);
+}
+
 JNIEXPORT
 void ANativeActivity_onCreate(ANativeActivity* activity, void* savedState,
                               size_t savedStateSize) {
@@ -477,6 +511,16 @@ void ANativeActivity_onCreate(ANativeActivity* activity, void* savedState,
     activity->callbacks->onNativeWindowDestroyed = onNativeWindowDestroyed;
     activity->callbacks->onInputQueueCreated = onInputQueueCreated;
     activity->callbacks->onInputQueueDestroyed = onInputQueueDestroyed;
+	activity->callbacks->onNativeWindowRedrawNeeded = onNativeWindowRedrawNeeded;
 
     activity->instance = android_app_create(activity, savedState, savedStateSize);
 }
+
+void RunCallbackOnUIThread( void (*callback)(void *), void * opaque )
+{
+	MainThreadCallbackProps gpdata;
+	gpdata.callback = callback;
+	gpdata.opaque = opaque;
+	write(gapp->uimsgwrite, &gpdata, sizeof(gpdata) );	
+}
+
