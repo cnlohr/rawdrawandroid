@@ -16,11 +16,11 @@
 #include <fcntl.h>
 #include "CNFGAndroid.h"
 
-#define CNFA_IMPLEMENTATION
+//#define CNFA_IMPLEMENTATION
 #define CNFG_IMPLEMENTATION
 #define CNFG3D
 
-#include "cnfa/CNFA.h"
+//#include "cnfa/CNFA.h"
 #include "CNFG.h"
 
 #define WEBVIEW_NATIVE_ACTIVITY_IMPLEMENTATION
@@ -241,7 +241,8 @@ void HandleResume()
 	suspended = 0;
 }
 
-void Callback( struct CNFADriver * sd, short * out, short * in, int framesp, int framesr )
+/*
+void AudioCallback( struct CNFADriver * sd, short * out, short * in, int framesp, int framesr )
 {
 	memset(out, 0, framesp*sizeof(uint16_t));
 	if(suspended) return;
@@ -253,6 +254,7 @@ void Callback( struct CNFADriver * sd, short * out, short * in, int framesp, int
 	}
 	stream_offset += framesp;
 }
+*/
 
 void HandleThisWindowTermination()
 {
@@ -411,7 +413,7 @@ int main( int argc, char ** argv )
 	SetupIMU();
 	
 	// Disabled, for now.
-	//InitCNFAAndroid( Callback, "A Name", SAMPLE_RATE, 0, 1, 0, SAMPLE_COUNT, 0, 0, 0 );
+	//InitCNFAAndroid( AudioCallback, "A Name", SAMPLE_RATE, 0, 1, 0, SAMPLE_COUNT, 0, 0, 0 );
 
 	SetupJSThread();
 
