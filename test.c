@@ -50,6 +50,7 @@ void SetupIMU()
 
 }
 
+
 float accx, accy, accz;
 int accs;
 
@@ -232,6 +233,12 @@ void HandleResume()
 	suspended = 0;
 }
 
+void HandleThisWindowTermination()
+{
+	suspended = 1;
+}
+
+
 uint32_t randomtexturedata[256*256];
 uint32_t webviewdata[500*500];
 
@@ -239,47 +246,28 @@ uint32_t webviewdata[500*500];
 jobject GlobalWebViewObject = 0;
 jobject SurfaceViewObject;
 
-void CheckWebViewTitle( void * v )
+void CheckWebView( void * v )
 {
 	static int runno = 0;
-	runno++;
 	WebViewNativeActivityObject * wvn = (WebViewNativeActivityObject*)v;
-	char * s = WebViewGetLastWindowTitle(wvn);
+	if( WebViewGetProgress( wvn ) != 100 ) return;
 
+	runno++;
 	if( runno == 1 )
 	{
-		WebViewExecuteJavascript( wvn, "\
-		let i = 0;\n\
-		document.body.innerHTML = '6';\n\
-		var port;\n\
-		function pull() {\n\
-			port.postMessage(\"pingpingpingping1\");\n\
-			port.postMessage(\"pingpingpingping2\");\n\
-			document.body.innerHTML = i++;\n\
-		}\n\
-		onmessage = function (e) { \
-			port = e.ports[0]; \
-			document.body.innerHTML = port; \
-			port.onmessage = function (f) { \
-				parse(f.data); \
-			} \
-		} \
-		" );
-		usleep(4000);
-		WebViewPostMessage( wvn, "YYYYXXXXZZZZWWWW", 1 );
-		usleep(4000);
+		WebViewPostMessage( wvn, "...", 1 );
 	}
-
-//	WebViewPostMessage( wvn, "YYYYXXXXZZZZWWWW", 0 );
-
-	WebViewExecuteJavascript( wvn, "\
-		/*document.body.innerHTML = '<HTML><BODY>' + i + '</BODY></HTML>';*/ \
-		/*document.title = 'Javascript:' + i++;*/ \
-		/*port.postMessage( 'zzzz' );*/ \
-		pull(); \
-	" );
-	puts( s );
-	free( s );
+	else
+	{
+		// Invoke JavaScript, which calls a function to send a webmessage
+		// back into C land.
+		WebViewExecuteJavascript( wvn, "SendMessageToC();" );
+		
+		// Send a WebMessage into the JavaScript code.
+		char st[128];
+		sprintf( st, "Into JavaScript %d\n", runno );
+		WebViewPostMessage( wvn, st, 0 );
+	}
 }
 
 jobject g_attachLooper;
@@ -298,24 +286,12 @@ void SetupWebView( void * v )
 	env = (*envptr);
 
 	while( g_attachLooper == 0 ) usleep(1);
-	WebViewCreate( wvn, g_attachLooper, 500, 500 );
+	WebViewCreate( wvn, "file:///android_asset/test.html", g_attachLooper, 500, 500 );
+	//WebViewCreate( wvn, "about:blank", g_attachLooper, 500, 500 );
 }
 
 
 pthread_t jsthread;
-
-int msgpipeaux[2];
-
-
-static int process_aux( int dummy1, int dummy2, void * dummy3 ) {
-	// Can't trust parameters in UI thread callback.
-//	printf( "####################################################################3\n" );
-	uint8_t c = 0;
-    int r = read(msgpipeaux[0], &c, 1);
-	if( r>0 )
-		printf( "##<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %02x\n", c );
-	return 1;
-}
 
 void * JavscriptThread( void * v )
 {
@@ -339,17 +315,6 @@ void * JavscriptThread( void * v )
 		g_attachLooper = env->NewGlobalRef(envptr, thisLooper);
 	}
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Handle calling events on the UI thread.  You can get callbacks with RunCallbackOnUIThread.
-    if (pipe(msgpipeaux)) {
-        fprintf(stderr,"could not create pipe: %s", strerror(errno));
-        return 0;
-    }
-    ALooper* looper = ALooper_forThread();
-
-    ALooper_addFd(looper, msgpipeaux[0], 7, ALOOPER_EVENT_INPUT, process_aux, 0);  //NOTE: Cannot use NULL callback
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 	jmethodID getQueueMethod = env->GetMethodID( envptr, LooperClass, "getQueue", "()Landroid/os/MessageQueue;" );
 	jobject   lque = env->CallObjectMethod( envptr, g_attachLooper, getQueueMethod );
 
@@ -364,12 +329,6 @@ void * JavscriptThread( void * v )
 	
 	while(1)
 	{
-		int events;
-		struct android_poll_source* source;
-		if (ALooper_pollAll( 1, 0, &events, (void**)&source) >= 0)
-		{
-			printf( "PolllO(((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((\n" );
-		}
 
 		// Instead of using Looper::loop(), we just call next on the looper object.
 
@@ -379,19 +338,9 @@ void * JavscriptThread( void * v )
 		// MessagePayload is a org.chromium.content_public.browser.MessagePayload
 
 		jclass mpclass = env->GetObjectClass( envptr, MessagePayload );
-		/*
-		printf( "JC: %p\n", mpclass );
-		printf( "OBJECTS:\n" );
-		PrintClassOfObject(MessagePayload);
-		PrintObjectString( MessagePayload );
-		printf( "SECOND: %p\n", MessageSecond);
-		PrintClassOfObject(MessageSecond);
-		PrintObjectString( MessageSecond );
-		printf( "DUMPARINO\n" );
-		DumpObjectClassProperties( MessagePayload );
-		*/
 
 		// Get field "b" which is the web message payload.
+		// If you are using binary sockets, it will be in `c` and be a byte array.
 		jfieldID mstrf  = env->GetFieldID( envptr, mpclass, "b", "Ljava/lang/String;" );
 		jstring strObjDescr = (jstring)env->GetObjectField(envptr, MessagePayload, mstrf );
 
@@ -422,7 +371,8 @@ int main( int argc, char ** argv )
 
 	CNFGBGColor = 0x000040ff;
 	CNFGSetupFullscreen( "Test Bench", 0 );
-	//CNFGSetup( "Test Bench", 0, 0 );
+	
+	HandleWindowTermination = HandleThisWindowTermination;
 
 	for( x = 0; x < HMX; x++ )
 	for( y = 0; y < HMY; y++ )
@@ -459,7 +409,7 @@ int main( int argc, char ** argv )
 		if( suspended ) { usleep(50000); continue; }
 
 		RunCallbackOnUIThread( (void(*)(void*))WebViewRequestRenderToCanvas, &MyWebView );
-		RunCallbackOnUIThread( CheckWebViewTitle, &MyWebView );
+		RunCallbackOnUIThread( CheckWebView, &MyWebView );
 
 		CNFGClearFrame();
 		CNFGColor( 0xFFFFFFFF );
@@ -478,7 +428,6 @@ int main( int argc, char ** argv )
 		sprintf( st, "%dx%d %d %d %d %d %d %d\n%d %d\n%5.2f %5.2f %5.2f %d", screenx, screeny, lastbuttonx, lastbuttony, lastmotionx, lastmotiony, lastkey, lastkeydown, lastbid, lastmask, accx, accy, accz, accs );
 		CNFGDrawText( st, 10 );
 		CNFGSetLineWidth( 2 );
-
 
 		// Square behind text
 		CNFGColor( 0x303030ff );

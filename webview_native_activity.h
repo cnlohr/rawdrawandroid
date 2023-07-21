@@ -16,10 +16,17 @@ typedef struct
 } WebViewNativeActivityObject;
 
 // Must be called from main thread
-void WebViewCreate( WebViewNativeActivityObject * w, jobject useLooperForWebMessages, int pw, int ph );
+
+// initial_url = "about:blank" for a java-script only page.  Can also be file:///android_asset/test.html.
+// Loading from "about:blank" will make the page ready almost immediately, otherwise it's about 50ms to load.
+// useLooperForWebMessages is required, and must be a global jobject of your preferred looper to handle webmessages.
+void WebViewCreate( WebViewNativeActivityObject * w, const char * initial_url, jobject useLooperForWebMessages, int pw, int ph );
 void WebViewExecuteJavascript( WebViewNativeActivityObject * obj, const char * js );
+
+// Note: Do not initialize until page reports as 100% loaded, with WebViewGetProgress.
 void WebViewPostMessage( WebViewNativeActivityObject * obj, const char * mesg, int initial );
 void WebViewRequestRenderToCanvas( WebViewNativeActivityObject * obj );
+int  WebViewGetProgress( WebViewNativeActivityObject * obj );
 char * WebViewGetLastWindowTitle( WebViewNativeActivityObject * obj );
 
 // Can be called from any thread.
@@ -29,7 +36,7 @@ void WebViewNativeGetPixels( WebViewNativeActivityObject * obj, uint32_t * pixel
 
 volatile jobject g_objRootView;
 
-void WebViewCreate( WebViewNativeActivityObject * w, jobject useLooperForWebMessages, int pw, int ph )
+void WebViewCreate( WebViewNativeActivityObject * w, const char * initial_url, jobject useLooperForWebMessages, int pw, int ph )
 {
 	const struct JNINativeInterface * env = 0;
 	const struct JNINativeInterface ** envptr = &env;
@@ -80,7 +87,7 @@ void WebViewCreate( WebViewNativeActivityObject * w, jobject useLooperForWebMess
 
 	// You have to switch to this to be able to run javascript code.
 	jmethodID LoadURLMethod = env->GetMethodID(envptr, WebViewClass, "loadUrl", "(Ljava/lang/String;)V");
-	jstring strjs = env->NewStringUTF( envptr, "about:blank" );
+	jstring strjs = env->NewStringUTF( envptr, initial_url );
 	env->CallVoidMethod(envptr, wvObj, LoadURLMethod, strjs );
 	env->DeleteLocalRef( envptr, strjs );
 
@@ -101,7 +108,7 @@ void WebViewCreate( WebViewNativeActivityObject * w, jobject useLooperForWebMess
 	jclass WebMessagePortClass = env->FindClass(envptr, "android/webkit/WebMessagePort" );
 	jmethodID createWebMessageChannelMethod = env->GetMethodID(envptr, WebViewClass, "createWebMessageChannel", "()[Landroid/webkit/WebMessagePort;");
 	jobjectArray messageChannels = env->CallObjectMethod( envptr, wvObj, createWebMessageChannelMethod );
-	jobject mc0 = env->GetObjectArrayElement(envptr, messageChannels, 0); // MC1 is used elsewhere.
+	jobject mc0 = env->GetObjectArrayElement(envptr, messageChannels, 0); // MC1 is handed over to javascript.
 
 	jclass HandlerClassType = env->FindClass(envptr, "android/os/Handler" );
 	jmethodID HandlerObjectConstructor = env->GetMethodID(envptr, HandlerClassType, "<init>", "(Landroid/os/Looper;)V");
@@ -142,6 +149,23 @@ void WebViewCreate( WebViewNativeActivityObject * w, jobject useLooperForWebMess
 	env->DeleteLocalRef( envptr, ViewClass );
 }
 
+int  WebViewGetProgress( WebViewNativeActivityObject * obj )
+{
+	const struct JNINativeInterface * env = 0;
+	const struct JNINativeInterface ** envptr = &env;
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+	const struct JNIInvokeInterface * jnii = *jniiptr;
+
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+	env = (*envptr);
+
+	jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
+    jmethodID WebViewProgress = env->GetMethodID(envptr, WebViewClass, "getProgress", "()I");
+	int ret = env->CallIntMethod( envptr, obj->WebViewObject, WebViewProgress );
+	env->DeleteLocalRef( envptr, WebViewClass );
+	return ret;
+}
+
 void WebViewPostMessage( WebViewNativeActivityObject * w, const char * mesg, int initial )
 {
 	const struct JNINativeInterface * env = 0;
@@ -153,36 +177,53 @@ void WebViewPostMessage( WebViewNativeActivityObject * w, const char * mesg, int
 	env = (*envptr);
 
 	jclass WebMessagePortClass = env->FindClass(envptr, "android/webkit/WebMessagePort" );
-	jobject mc1 = env->GetObjectArrayElement(envptr, w->MessageChannels, 1);
+	jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
+	jclass WebMessageClass = env->FindClass(envptr, "android/webkit/WebMessage" );
+
+	jstring strjs = env->NewStringUTF( envptr, mesg );
 
 	if( initial )
 	{
-		//https://stackoverflow.com/questions/41753104/how-do-you-use-webmessageport-as-an-alternative-to-addjavascriptinterface
-		jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
-		jmethodID postMessageMethod = env->GetMethodID(envptr, WebViewClass, "postWebMessage", "(Landroid/webkit/WebMessage;Landroid/net/Uri;)V");
-
-		jclass WebMessageClass = env->FindClass(envptr, "android/webkit/WebMessage" );
-		jstring strjs = env->NewStringUTF( envptr, mesg );
+		jobject mc1 = env->GetObjectArrayElement(envptr, w->MessageChannels, 1);
 		jmethodID WebMessageConstructor = env->GetMethodID(envptr, WebMessageClass, "<init>", "(Ljava/lang/String;[Landroid/webkit/WebMessagePort;)V");
+
+		//https://stackoverflow.com/questions/41753104/how-do-you-use-webmessageport-as-an-alternative-to-addjavascriptinterface
+		// Only on initial hop do we want to post the root webmessage, which hooks up out webmessage port.
+		jmethodID postMessageMethod = env->GetMethodID(envptr, WebViewClass, "postWebMessage", "(Landroid/webkit/WebMessage;Landroid/net/Uri;)V");
 
 		// Need to generate a new message channel array.
 		jobjectArray jsUseWebPorts = env->NewObjectArray( envptr, 1, WebMessagePortClass, mc1);
-		jobject newwm = env->NewObject(envptr, WebMessageClass, WebMessageConstructor, strjs, jsUseWebPorts );
 
 		// Need Uri.EMPTY
 		jclass UriClass = env->FindClass(envptr, "android/net/Uri" );
 		jfieldID EmptyField = env->GetStaticFieldID( envptr, UriClass, "EMPTY", "Landroid/net/Uri;" );
 		jobject EmptyURI = env->GetStaticObjectField( envptr, UriClass, EmptyField );
 
+
+		jobject newwm = env->NewObject(envptr, WebMessageClass, WebMessageConstructor, strjs, jsUseWebPorts );
 		env->CallVoidMethod( envptr, w->WebViewObject, postMessageMethod, newwm, EmptyURI );
-		env->DeleteLocalRef( envptr, WebViewClass );
-		env->DeleteLocalRef( envptr, WebMessageClass );
+
 		env->DeleteLocalRef( envptr, jsUseWebPorts );
+		env->DeleteLocalRef( envptr, newwm );
+		env->DeleteLocalRef( envptr, EmptyURI );
+		env->DeleteLocalRef( envptr, UriClass );
+	}
+	else
+	{
+		jobject mc0 = env->GetObjectArrayElement(envptr, w->MessageChannels, 0);
+		jmethodID postMessageMethod = env->GetMethodID(envptr, WebMessagePortClass, "postMessage", "(Landroid/webkit/WebMessage;)V");
+		jmethodID WebMessageConstructor = env->GetMethodID(envptr, WebMessageClass, "<init>", "(Ljava/lang/String;)V");
+
+		jobject newwm = env->NewObject(envptr, WebMessageClass, WebMessageConstructor, strjs );
+		env->CallVoidMethod( envptr, mc0, postMessageMethod, newwm );
 
 		env->DeleteLocalRef( envptr, newwm );
-		env->DeleteLocalRef( envptr, strjs );
+		env->DeleteLocalRef( envptr, mc0 );
 	}
 
+	env->DeleteLocalRef( envptr, strjs );
+	env->DeleteLocalRef( envptr, WebViewClass );
+	env->DeleteLocalRef( envptr, WebMessageClass );
 	env->DeleteLocalRef( envptr, WebMessagePortClass );
 }
 
@@ -241,7 +282,7 @@ void WebViewExecuteJavascript( WebViewNativeActivityObject * obj, const char * j
 
 	//WebView.evaluateJavascript(String script, ValueCallback<String> resultCallback) 
 	jstring strjs = env->NewStringUTF( envptr, js );
-	env->CallVoidMethod( envptr, obj->WebViewObject, WebViewEvalJSMethod, strjs, 0 );
+	env->CallVoidMethod( envptr, obj->WebViewObject, WebViewEvalJSMethod, strjs, 0 );  // Tricky: resultCallback = 0, if you try running looper.loop() it will crash - only manually process messages.
 	env->DeleteLocalRef( envptr, WebViewClass );
 	env->DeleteLocalRef( envptr, strjs );
 }
