@@ -238,11 +238,9 @@ static void process_input(struct android_app* app, struct android_poll_source* s
 
 static int process_ui( int dummy1, int dummy2, void * dummy3 ) {
 	// Can't trust parameters in UI thread callback.
-	printf( ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n" );
 	MainThreadCallbackProps rep;
     read(gapp->uimsgread, &rep, sizeof(rep));
 	rep.callback( rep.opaque );
-	printf( "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" );
 	return 1;
 }
 

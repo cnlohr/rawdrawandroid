@@ -249,14 +249,14 @@ void CheckWebViewTitle( void * v )
 	if( runno == 1 )
 	{
 		WebViewExecuteJavascript( wvn, "\
-		let i = 0;\
-		document.body.innerHTML = '6'; \
-		var port; \
-		function pull() {\
-			port.postMessage(\"pingpingpingping1\");\
-			port.postMessage(\"pingpingpingping2\");\
-			document.body.innerHTML = i++; \
-		}\
+		let i = 0;\n\
+		document.body.innerHTML = '6';\n\
+		var port;\n\
+		function pull() {\n\
+			port.postMessage(\"pingpingpingping1\");\n\
+			port.postMessage(\"pingpingpingping2\");\n\
+			document.body.innerHTML = i++;\n\
+		}\n\
 		onmessage = function (e) { \
 			port = e.ports[0]; \
 			document.body.innerHTML = port; \
@@ -265,9 +265,9 @@ void CheckWebViewTitle( void * v )
 			} \
 		} \
 		" );
-		usleep(200000);
+		usleep(4000);
 		WebViewPostMessage( wvn, "YYYYXXXXZZZZWWWW", 1 );
-		usleep(200000);
+		usleep(4000);
 	}
 
 //	WebViewPostMessage( wvn, "YYYYXXXXZZZZWWWW", 0 );
@@ -292,71 +292,13 @@ void SetupWebView( void * v )
 	const struct JNINativeInterface * env = 0;
 	const struct JNINativeInterface ** envptr = &env;
 	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-	jobject clazz = gapp->activity->clazz;
 	const struct JNIInvokeInterface * jnii = *jniiptr;
 
 	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
 	env = (*envptr);
 
-/*
-	jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
-	jmethodID mainLooperMethod = env->GetStaticMethodID( envptr, LooperClass, "getMainLooper", "()Landroid/os/Looper;");
-	jobject attachLooper = env->CallStaticObjectMethod( envptr, LooperClass, mainLooperMethod );
-
-	attachLooper = env->NewGlobalRef(envptr, attachLooper);
-*/
-	jobject attachLooper = g_attachLooper;
-	printf( "IN LOOPER: %p\n", attachLooper );
-
-	WebViewCreate( wvn, attachLooper );
-}
-
-void PrintClassOfObject( jobject bundle )
-{
-	const struct JNINativeInterface * env = 0;
-	const struct JNINativeInterface ** envptr = &env;
-	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-	jobject clazz = gapp->activity->clazz;
-	const struct JNIInvokeInterface * jnii = *jniiptr;
-	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
-	env = (*envptr);
-
-	jclass myclass = env->GetObjectClass( envptr, bundle );
-	jmethodID mid = env->GetMethodID( envptr, myclass, "getClass", "()Ljava/lang/Class;");
-	jobject clsObj = env->CallObjectMethod( envptr, bundle, mid );
-	jclass clazzz = env->GetObjectClass( envptr, clsObj );
-	mid = env->GetMethodID(envptr, clazzz, "getName", "()Ljava/lang/String;");
-	jstring strObj = (jstring)env->CallObjectMethod( envptr, clsObj, mid);
-	char *name = strdup( env->GetStringUTFChars( envptr, strObj, 0) );
-	printf( "Class type: %s\n", name );
-
-	env->DeleteLocalRef( envptr, myclass );
-	env->DeleteLocalRef( envptr, clsObj );
-	env->DeleteLocalRef( envptr, clazzz );
-	env->DeleteLocalRef( envptr, strObj );
-	free( name );
-}
-
-void PrintObjectString( jobject bundle )
-{
-	const struct JNINativeInterface * env = 0;
-	const struct JNINativeInterface ** envptr = &env;
-	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-	jobject clazz = gapp->activity->clazz;
-	const struct JNIInvokeInterface * jnii = *jniiptr;
-
-	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
-	env = (*envptr);
-
-	jclass myclass = env->GetObjectClass( envptr, bundle );
-	jmethodID toStringMethod = env->GetMethodID( envptr, myclass, "toString", "()Ljava/lang/String;");
-	jstring strObjDescr = (jstring)env->CallObjectMethod( envptr, bundle, toStringMethod);
-	char *descr = strdup( env->GetStringUTFChars( envptr, strObjDescr, 0) );
-	printf( "String: %s\n", descr );
-
-	env->DeleteLocalRef( envptr, myclass );
-	env->DeleteLocalRef( envptr, strObjDescr );
-	free( descr );
+	while( g_attachLooper == 0 ) usleep(1);
+	WebViewCreate( wvn, g_attachLooper, 500, 500 );
 }
 
 
@@ -380,7 +322,6 @@ void * JavscriptThread( void * v )
 	const struct JNINativeInterface * env = 0;
 	const struct JNINativeInterface ** envptr = &env;
 	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-	jobject clazz = gapp->activity->clazz;
 	const struct JNIInvokeInterface * jnii = *jniiptr;
 
 	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
@@ -400,19 +341,13 @@ void * JavscriptThread( void * v )
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Handle calling events on the UI thread.  You can get callbacks with RunCallbackOnUIThread.
-    if (pipe2(msgpipeaux, O_NONBLOCK | O_CLOEXEC )) {
+    if (pipe(msgpipeaux)) {
         fprintf(stderr,"could not create pipe: %s", strerror(errno));
         return 0;
     }
-    ALooper* looper = ALooper_forThread();//ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
+    ALooper* looper = ALooper_forThread();
 
-
-	struct android_poll_source * ps = malloc( sizeof( struct android_poll_source ) );
-    ps->id = LOOPER_ID_USER;
-    ps->app = gapp;
-    ps->process = process_aux;
-
-    ALooper_addFd(looper, msgpipeaux[0], 7, ALOOPER_EVENT_INPUT, process_aux, ps);  //NOTE: Cannot use NULL callback
+    ALooper_addFd(looper, msgpipeaux[0], 7, ALOOPER_EVENT_INPUT, process_aux, 0);  //NOTE: Cannot use NULL callback
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	jmethodID getQueueMethod = env->GetMethodID( envptr, LooperClass, "getQueue", "()Landroid/os/MessageQueue;" );
@@ -422,37 +357,11 @@ void * JavscriptThread( void * v )
 	jmethodID nextMethod = env->GetMethodID( envptr, MessageQueueClass, "next", "()Landroid/os/Message;" );
 
 	jclass MessageClass = env->FindClass(envptr, "android/os/Message");
-	jmethodID getDataMethod = env->GetMethodID( envptr, MessageClass, "getData", "()Landroid/os/Bundle;" );
-	jmethodID getTargetMethod = env->GetMethodID( envptr, MessageClass, "getTarget", "()Landroid/os/Handler;" );
-
-
-	jclass HandlerClass = env->FindClass(envptr, "android/os/Handler");
-	jmethodID getLooperMethod = env->GetMethodID( envptr, HandlerClass, "getLooper", "()Landroid/os/Looper;" );
-	
     jfieldID objid = env->GetFieldID( envptr, MessageClass, "obj", "Ljava/lang/Object;" );
 
 	jclass PairClass = env->FindClass(envptr, "android/util/Pair");
     jfieldID pairfirst  = env->GetFieldID( envptr, PairClass, "first", "Ljava/lang/Object;" );
-    jfieldID pairsecond = env->GetFieldID( envptr, PairClass, "second", "Ljava/lang/Object;" );
-	printf( "Field props: %p %p\n", pairfirst, pairsecond );
 	
-	//org.chromium.content_public.browser.MessagePayload
-	// chromium/content/browser/MessagePayloadJni.java
-	// org/chromium/content_public/browser/MessagePayload
-	// org/chromium/content_public/browser/MessagePayload
-	// org/chromium/content/browser/MessagePayloadJni
-//	jclass MessagePayloadClass = env->FindClass( envptr, "org/chromium/content/browser/MessagePayloadJni" );
-//	printf( "AA %p\n", MessagePayloadClass );
-//	exit(5);
-//	jmethodID getMessageAsStringMethod = env->GetMethodID( envptr, MessagePayloadClass, "getAsString", "()Ljava/lang/String;" );
-	
-	//https://stackoverflow.com/questions/76716355/acessing-messagepayloadjni-class-in-jni
-	//https://chromium.googlesource.com/chromium/src/+/refs/heads/main/content/public/android/java/src/org/chromium/content/browser/MessagePayloadJni.java
-	//https://chromium.googlesource.com/chromium/src/+/refs/heads/main/content/public/android/java/src/org/chromium/content/browser/AppWebMessagePort.java
-	//https://chromium.googlesource.com/chromium/src/+/refs/heads/main/content/public/android/java/src/org/chromium/content_public/browser/MessagePayload.java
-	//https://source.chromium.org/chromium/chromium/src/+/refs/heads/main:content/public/android/java/src/org/chromium/content_public/browser/MessagePayload.java;l=16;drc=636048a55ca7e2e35d5a15ba10d64b03dfe8c588;bpv=1;bpt=1
-	//
-
 	while(1)
 	{
 		int events;
@@ -462,104 +371,40 @@ void * JavscriptThread( void * v )
 			printf( "PolllO(((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((\n" );
 		}
 
+		// Instead of using Looper::loop(), we just call next on the looper object.
+
 		jobject msg = env->CallObjectMethod( envptr, lque, nextMethod );
 		jobject innerObj = env->GetObjectField( envptr, msg, objid );
-		jobject MessagePaypload = env->GetObjectField( envptr, innerObj, pairfirst );
-		jobject MessageSecond = env->GetObjectField( envptr, innerObj, pairsecond );
+		jobject MessagePayload = env->GetObjectField( envptr, innerObj, pairfirst );
 		// MessagePayload is a org.chromium.content_public.browser.MessagePayload
 
-		jclass mpclass = env->GetObjectClass( envptr, MessagePaypload );
-#if 0
-
+		jclass mpclass = env->GetObjectClass( envptr, MessagePayload );
+		/*
+		printf( "JC: %p\n", mpclass );
 		printf( "OBJECTS:\n" );
-		PrintClassOfObject(MessagePaypload);
-		PrintObjectString( MessagePaypload );
-		printf( "SECOND:\n");
+		PrintClassOfObject(MessagePayload);
+		PrintObjectString( MessagePayload );
+		printf( "SECOND: %p\n", MessageSecond);
 		PrintClassOfObject(MessageSecond);
 		PrintObjectString( MessageSecond );
+		printf( "DUMPARINO\n" );
+		DumpObjectClassProperties( MessagePayload );
+		*/
 
-        jmethodID midGetClass = env->GetMethodID( envptr, mpclass, "getClass", "()Ljava/lang/Class;");
-		jclass ClassClass = env->FindClass(envptr, "java/lang/Class");
-
-        jobject clsObj = env->CallObjectMethod( envptr, MessagePaypload, midGetClass);
-		printf( "clsObj: %p\n", clsObj );
-		jmethodID getMethodsMethod = env->GetMethodID( envptr, ClassClass, "getMethods","()[Ljava/lang/reflect/Method;");
-		jobject jobjArray = env->CallObjectMethod( envptr, clsObj, getMethodsMethod );
-
-
-		jmethodID getFieldsMethod = env->GetMethodID( envptr, ClassClass, "getFields","()[Ljava/lang/reflect/Field;");
-		jobject jobjArrayFields = env->CallObjectMethod( envptr, clsObj, getFieldsMethod );
-
-
-        jsize len = env->GetArrayLength(envptr, jobjArray);
-        jsize i;
-
-        for (i = 0 ; i < len ; i++) {
-            jobject _strMethod = env->GetObjectArrayElement( envptr, jobjArray , i) ;
-            jclass _methodClazz = env->GetObjectClass(envptr, _strMethod) ;
-            jmethodID mid = env->GetMethodID(envptr, _methodClazz , "getName" , "()Ljava/lang/String;") ;
-            jstring _name = (jstring)env->CallObjectMethod( envptr, _strMethod , mid ) ;
-            const char *str = env->GetStringUTFChars(envptr, _name, 0);
-            printf("%s\n", str);
-            env->ReleaseStringUTFChars(envptr, _name, str);
-        }
-		printf( "----------\n" );
-        len = env->GetArrayLength(envptr, jobjArrayFields);
-
-        for (i = 0 ; i < len ; i++) {
-            jobject _strMethod = env->GetObjectArrayElement( envptr, jobjArrayFields , i) ;
-            jclass _methodClazz = env->GetObjectClass(envptr, _strMethod) ;
-            jmethodID mid = env->GetMethodID(envptr, _methodClazz , "getName" , "()Ljava/lang/String;") ;
-            jstring _name = (jstring)env->CallObjectMethod( envptr, _strMethod , mid ) ;
-            const char *str = env->GetStringUTFChars(envptr, _name, 0);
-            printf("%s\n", str);
-            env->ReleaseStringUTFChars(envptr, _name, str);
-        }
-#endif
-		//exit( 0 );
-
-//		jmethodID getMessageAsStringMethod = env->GetMethodID( envptr, mpclass, "getAsString", "()Ljava/lang/String;" );
-//		jstring strObjDescr = (jstring)env->CallObjectMethod( envptr, mpclass, getMessageAsStringMethod);
-
+		// Get field "b" which is the web message payload.
 		jfieldID mstrf  = env->GetFieldID( envptr, mpclass, "b", "Ljava/lang/String;" );
-		printf( "MSTRF: %p\n", mstrf );
-		jstring strObjDescr = (jstring)env->GetObjectField(envptr, MessagePaypload, mstrf );
+		jstring strObjDescr = (jstring)env->GetObjectField(envptr, MessagePayload, mstrf );
 
-		const char *descr = strdup( env->GetStringUTFChars( envptr, strObjDescr, 0) );
+		const char *descr = env->GetStringUTFChars( envptr, strObjDescr, 0);
 		printf( "String Out: %s\n", descr );
 
-/*
+        env->ReleaseStringUTFChars(envptr, strObjDescr, descr);
 
-		printf( "MESSAGE!\n" );
-		PrintObjectString( msg );
-		jobject bundle = env->CallObjectMethod( envptr, msg, getDataMethod );
-		jobject target = env->CallObjectMethod( envptr, msg, getTargetMethod );
-		printf( "BUNDLE: %p %p\n", bundle, target );
-
-		// Looper 	getLooper() 
-
-		jobject checkHandler = env->CallObjectMethod( envptr, target, getLooperMethod );
-		printf( "HANDLER: %p\n", checkHandler );
-
-
-		PrintClassOfObject( innerObj );
-		PrintObjectString( innerObj );
-
-		PrintClassOfObject( bundle );
-		PrintObjectString( bundle );
-		PrintObjectString( checkHandler );
-
-
-		env->DeleteLocalRef( envptr, bundle );
-		env->DeleteLocalRef( envptr, target );
-		env->DeleteLocalRef( envptr, checkHandler );
-*/
+		env->DeleteLocalRef( envptr, mpclass );
 		env->DeleteLocalRef( envptr, msg );
-
-		//jmethodID loopMethod = env->GetStaticMethodID(envptr, LooperClass, "loop", "()V");
-		//MessageQueue queue = me.mQueue;
-		//env->CallStaticVoidMethod( envptr, LooperClass, loopMethod );
-		//public MessageQueue getQueue ()
+		env->DeleteLocalRef( envptr, strObjDescr );
+		env->DeleteLocalRef( envptr, innerObj );
+		env->DeleteLocalRef( envptr, MessagePayload );
 	}
 }
 
@@ -599,37 +444,6 @@ int main()
 
 	SetupJSThread();
 
-	usleep(30000);
-/*
-	{
-		const struct JNINativeInterface * env = 0;
-		const struct JNINativeInterface ** envptr = &env;
-		const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-		jobject clazz = gapp->activity->clazz;
-		const struct JNIInvokeInterface * jnii = *jniiptr;
-
-		jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
-		env = (*envptr);
-
-		// Create a looper on this thread...
-		jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
-		jmethodID myLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "myLooper", "()Landroid/os/Looper;");
-		//jmethodID mainLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "getMainLooper", "()Landroid/os/Looper;");
-		jobject thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
-		if( !thisLooper )
-		{
-			printf( "THREAD DID NOT HAVE LOOPER, but did have: %p\n", ALooper_forThread() );
-			jmethodID prepareMethod = env->GetStaticMethodID(envptr, LooperClass, "prepare", "()V");
-			env->CallStaticVoidMethod( envptr, LooperClass, prepareMethod );
-			thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
-			g_attachLooper = env->NewGlobalRef(envptr, thisLooper);
-		}
-
-//		thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, mainLooperMethod );
-//		g_attachLooper = env->NewGlobalRef(envptr, thisLooper);
-//		printf( "GENNED LOOPER %p <<<<<<<<<<<<<,\n", thisLooper );
-	}
-*/
 	// Create webview and wait for its completion
 	RunCallbackOnUIThread( SetupWebView, &MyWebView );
 	while( !MyWebView.WebViewObject ) usleep(1);
@@ -642,9 +456,10 @@ int main()
 		CNFGHandleInput();
 		AccCheck();
 
-		RunCallbackOnUIThread( CheckWebViewTitle, &MyWebView );
-		sleep(1);
 		if( suspended ) { usleep(50000); continue; }
+
+		RunCallbackOnUIThread( (void(*)(void*))WebViewRequestRenderToCanvas, &MyWebView );
+		RunCallbackOnUIThread( CheckWebViewTitle, &MyWebView );
 
 		CNFGClearFrame();
 		CNFGColor( 0xFFFFFFFF );
@@ -712,7 +527,6 @@ int main()
 		CNFGBlitImage( randomtexturedata, 100, 600, 256, 256 );
 
 		WebViewNativeGetPixels( &MyWebView, webviewdata, 500, 500 );
-		for( i = 0; i < 500*500; i++ ) webviewdata[i] = bswap_32( webviewdata[i] );
 		CNFGBlitImage( webviewdata, 500, 640, 500, 500 );
 
 		frames++;
