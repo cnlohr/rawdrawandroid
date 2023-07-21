@@ -11,6 +11,9 @@
 #include <asset_manager_jni.h>
 #include <android_native_app_glue.h>
 #include <android/sensor.h>
+#include <byteswap.h>
+#include <errno.h>
+#include <fcntl.h>
 #include "CNFGAndroid.h"
 
 #define CNFG_IMPLEMENTATION
@@ -230,6 +233,8 @@ void HandleResume()
 }
 
 uint32_t randomtexturedata[256*256];
+uint32_t webviewdata[500*500];
+
 
 jobject GlobalWebViewObject = 0;
 jobject SurfaceViewObject;
@@ -240,17 +245,172 @@ void CheckWebViewTitle( void * v )
 	runno++;
 	WebViewNativeActivityObject * wvn = (WebViewNativeActivityObject*)v;
 	char * s = WebViewGetLastWindowTitle(wvn);
+
 	if( runno == 1 )
-		WebViewExecuteJavascript( wvn, "let i = 0;" );
-	WebViewExecuteJavascript( wvn, "document.body.innerHTML = '<HTML><BODY>' + i + '</BODY></HTML>'; document.title = 'Javascript:' + i++;" );
+	{
+		WebViewExecuteJavascript( wvn, "\
+		let i = 0;\n\
+		document.body.innerHTML = '6';\n\
+		var port;\n\
+		function pull() {\n\
+			port.postMessage(\"pingpingpingping1\");\n\
+			port.postMessage(\"pingpingpingping2\");\n\
+			document.body.innerHTML = i++;\n\
+		}\n\
+		onmessage = function (e) { \
+			port = e.ports[0]; \
+			document.body.innerHTML = port; \
+			port.onmessage = function (f) { \
+				parse(f.data); \
+			} \
+		} \
+		" );
+		usleep(4000);
+		WebViewPostMessage( wvn, "YYYYXXXXZZZZWWWW", 1 );
+		usleep(4000);
+	}
+
+//	WebViewPostMessage( wvn, "YYYYXXXXZZZZWWWW", 0 );
+
+	WebViewExecuteJavascript( wvn, "\
+		/*document.body.innerHTML = '<HTML><BODY>' + i + '</BODY></HTML>';*/ \
+		/*document.title = 'Javascript:' + i++;*/ \
+		/*port.postMessage( 'zzzz' );*/ \
+		pull(); \
+	" );
 	puts( s );
 	free( s );
 }
 
+jobject g_attachLooper;
+
 void SetupWebView( void * v )
 {
 	WebViewNativeActivityObject * wvn = (WebViewNativeActivityObject*)v;
-	WebViewCreate( wvn, 0 );
+
+
+	const struct JNINativeInterface * env = 0;
+	const struct JNINativeInterface ** envptr = &env;
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+	const struct JNIInvokeInterface * jnii = *jniiptr;
+
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+	env = (*envptr);
+
+	while( g_attachLooper == 0 ) usleep(1);
+	WebViewCreate( wvn, g_attachLooper, 500, 500 );
+}
+
+
+pthread_t jsthread;
+
+int msgpipeaux[2];
+
+
+static int process_aux( int dummy1, int dummy2, void * dummy3 ) {
+	// Can't trust parameters in UI thread callback.
+//	printf( "####################################################################3\n" );
+	uint8_t c = 0;
+    int r = read(msgpipeaux[0], &c, 1);
+	if( r>0 )
+		printf( "##<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %02x\n", c );
+	return 1;
+}
+
+void * JavscriptThread( void * v )
+{
+	const struct JNINativeInterface * env = 0;
+	const struct JNINativeInterface ** envptr = &env;
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+	const struct JNIInvokeInterface * jnii = *jniiptr;
+
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+	env = (*envptr);
+
+	// Create a looper on this thread...
+	jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
+	jmethodID myLooperMethod = env->GetStaticMethodID(envptr, LooperClass, "myLooper", "()Landroid/os/Looper;");
+	jobject thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
+	if( !thisLooper )
+	{
+		jmethodID prepareMethod = env->GetStaticMethodID(envptr, LooperClass, "prepare", "()V");
+		env->CallStaticVoidMethod( envptr, LooperClass, prepareMethod );
+		thisLooper = env->CallStaticObjectMethod( envptr, LooperClass, myLooperMethod );
+		g_attachLooper = env->NewGlobalRef(envptr, thisLooper);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Handle calling events on the UI thread.  You can get callbacks with RunCallbackOnUIThread.
+    if (pipe(msgpipeaux)) {
+        fprintf(stderr,"could not create pipe: %s", strerror(errno));
+        return 0;
+    }
+    ALooper* looper = ALooper_forThread();
+
+    ALooper_addFd(looper, msgpipeaux[0], 7, ALOOPER_EVENT_INPUT, process_aux, 0);  //NOTE: Cannot use NULL callback
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	jmethodID getQueueMethod = env->GetMethodID( envptr, LooperClass, "getQueue", "()Landroid/os/MessageQueue;" );
+	jobject   lque = env->CallObjectMethod( envptr, g_attachLooper, getQueueMethod );
+
+	jclass MessageQueueClass = env->FindClass(envptr, "android/os/MessageQueue");
+	jmethodID nextMethod = env->GetMethodID( envptr, MessageQueueClass, "next", "()Landroid/os/Message;" );
+
+	jclass MessageClass = env->FindClass(envptr, "android/os/Message");
+    jfieldID objid = env->GetFieldID( envptr, MessageClass, "obj", "Ljava/lang/Object;" );
+
+	jclass PairClass = env->FindClass(envptr, "android/util/Pair");
+    jfieldID pairfirst  = env->GetFieldID( envptr, PairClass, "first", "Ljava/lang/Object;" );
+	
+	while(1)
+	{
+		int events;
+		struct android_poll_source* source;
+		if (ALooper_pollAll( 1, 0, &events, (void**)&source) >= 0)
+		{
+			printf( "PolllO(((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((\n" );
+		}
+
+		// Instead of using Looper::loop(), we just call next on the looper object.
+
+		jobject msg = env->CallObjectMethod( envptr, lque, nextMethod );
+		jobject innerObj = env->GetObjectField( envptr, msg, objid );
+		jobject MessagePayload = env->GetObjectField( envptr, innerObj, pairfirst );
+		// MessagePayload is a org.chromium.content_public.browser.MessagePayload
+
+		jclass mpclass = env->GetObjectClass( envptr, MessagePayload );
+		/*
+		printf( "JC: %p\n", mpclass );
+		printf( "OBJECTS:\n" );
+		PrintClassOfObject(MessagePayload);
+		PrintObjectString( MessagePayload );
+		printf( "SECOND: %p\n", MessageSecond);
+		PrintClassOfObject(MessageSecond);
+		PrintObjectString( MessageSecond );
+		printf( "DUMPARINO\n" );
+		DumpObjectClassProperties( MessagePayload );
+		*/
+
+		// Get field "b" which is the web message payload.
+		jfieldID mstrf  = env->GetFieldID( envptr, mpclass, "b", "Ljava/lang/String;" );
+		jstring strObjDescr = (jstring)env->GetObjectField(envptr, MessagePayload, mstrf );
+
+		const char *descr = env->GetStringUTFChars( envptr, strObjDescr, 0);
+		printf( "String Out: %s\n", descr );
+
+        env->ReleaseStringUTFChars(envptr, strObjDescr, descr);
+
+		env->DeleteLocalRef( envptr, mpclass );
+		env->DeleteLocalRef( envptr, msg );
+		env->DeleteLocalRef( envptr, strObjDescr );
+		env->DeleteLocalRef( envptr, innerObj );
+		env->DeleteLocalRef( envptr, MessagePayload );
+	}
+}
+
+void SetupJSThread()
+{
+	pthread_create( &jsthread, 0, JavscriptThread, 0 );
 }
 
 int main()
@@ -282,6 +442,8 @@ int main()
 	}
 	SetupIMU();
 
+	SetupJSThread();
+
 	// Create webview and wait for its completion
 	RunCallbackOnUIThread( SetupWebView, &MyWebView );
 	while( !MyWebView.WebViewObject ) usleep(1);
@@ -294,9 +456,10 @@ int main()
 		CNFGHandleInput();
 		AccCheck();
 
-		RunCallbackOnUIThread( CheckWebViewTitle, &MyWebView );
-
 		if( suspended ) { usleep(50000); continue; }
+
+		RunCallbackOnUIThread( (void(*)(void*))WebViewRequestRenderToCanvas, &MyWebView );
+		RunCallbackOnUIThread( CheckWebViewTitle, &MyWebView );
 
 		CNFGClearFrame();
 		CNFGColor( 0xFFFFFFFF );
@@ -360,14 +523,11 @@ int main()
 		int x, y;
 		for( y = 0; y < 256; y++ )
 		for( x = 0; x < 256; x++ )
-			randomtexturedata[x+y*256] = x | ((x*394543L+y*355+iframeno)<<8);
+			randomtexturedata[x+y*256] = x | ((x*394543L+y*355+iframeno*3)<<8);
 		CNFGBlitImage( randomtexturedata, 100, 600, 256, 256 );
 
-
-		uint8_t * bufferbytes = malloc(500*500*4 );
-		WebViewNativeGetPixels( &MyWebView, bufferbytes, 500, 500 );
-		CNFGBlitImage( (uint32_t*)bufferbytes, 400, 600, 500, 500 );
-		free( bufferbytes );
+		WebViewNativeGetPixels( &MyWebView, webviewdata, 500, 500 );
+		CNFGBlitImage( webviewdata, 500, 640, 500, 500 );
 
 		frames++;
 		//On Android, CNFGSwapBuffers must be called, and CNFGUpdateScreenWithBitmap does not have an implied framebuffer swap.
@@ -381,9 +541,6 @@ int main()
 			linesegs = 0;
 			LastFPSTime+=1;
 		}
-		
-		
-		
 
 	}
 

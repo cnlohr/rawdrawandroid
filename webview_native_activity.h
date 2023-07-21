@@ -8,22 +8,28 @@ extern volatile jobject g_objRootView;
 typedef struct
 {
 	jobject WebViewObject;
+	jobjectArray MessageChannels;
+	jobject BackingBitmap;
+	jobject BackingCanvas;
+	int updated_canvas;
+	int w, h;
 } WebViewNativeActivityObject;
 
 // Must be called from main thread
-void WebViewCreate( WebViewNativeActivityObject * w, const char * initialUrl );
+void WebViewCreate( WebViewNativeActivityObject * w, jobject useLooperForWebMessages, int pw, int ph );
 void WebViewExecuteJavascript( WebViewNativeActivityObject * obj, const char * js );
+void WebViewPostMessage( WebViewNativeActivityObject * obj, const char * mesg, int initial );
+void WebViewRequestRenderToCanvas( WebViewNativeActivityObject * obj );
 char * WebViewGetLastWindowTitle( WebViewNativeActivityObject * obj );
 
 // Can be called from any thread.
-void WebViewNativeGetPixels( WebViewNativeActivityObject * obj, void * pixel_data, int w, int h );
-
+void WebViewNativeGetPixels( WebViewNativeActivityObject * obj, uint32_t * pixel_data, int w, int h );
 
 #ifdef WEBVIEW_NATIVE_ACTIVITY_IMPLEMENTATION
 
 volatile jobject g_objRootView;
 
-void WebViewCreate( WebViewNativeActivityObject * w, const char * initialUrl )
+void WebViewCreate( WebViewNativeActivityObject * w, jobject useLooperForWebMessages, int pw, int ph )
 {
 	const struct JNINativeInterface * env = 0;
 	const struct JNINativeInterface ** envptr = &env;
@@ -58,10 +64,25 @@ void WebViewCreate( WebViewNativeActivityObject * w, const char * initialUrl )
 	jobject wvObj = env->NewObject(envptr, WebViewClass, WebViewConstructor, contextObject );
 
 	// Unknown reason why - if you don't first load about:blank, it sometimes doesn't render right?
-    jmethodID WebViewLoadURLMethod = env->GetMethodID(envptr, WebViewClass, "loadUrl", "(Ljava/lang/String;)V");
-	jstring strul = env->NewStringUTF( envptr, "about:blank" );
-	env->CallVoidMethod(envptr, wvObj, WebViewLoadURLMethod, strul );
+	// Even more annoying - you can't pre-use loadUrl if you want to use message channels.
+    jmethodID WebViewLoadBaseURLMethod = env->GetMethodID(envptr, WebViewClass, "loadDataWithBaseURL", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+	jstring strul = env->NewStringUTF( envptr, "http://example.com" );
+	jstring strdata = env->NewStringUTF( envptr, "not-yet-loaded" );
+	jstring strmime = env->NewStringUTF( envptr, "text/html" );
+	jstring strencoding = env->NewStringUTF( envptr, "utf8" );
+	jstring strhistoryurl = env->NewStringUTF( envptr, "" );
+	env->CallVoidMethod(envptr, wvObj, WebViewLoadBaseURLMethod, strul, strdata, strmime, strencoding, strhistoryurl );
 	env->DeleteLocalRef( envptr, strul );
+	env->DeleteLocalRef( envptr, strdata );
+	env->DeleteLocalRef( envptr, strmime );
+	env->DeleteLocalRef( envptr, strencoding );
+	env->DeleteLocalRef( envptr, strhistoryurl );
+
+	// You have to switch to this to be able to run javascript code.
+	jmethodID LoadURLMethod = env->GetMethodID(envptr, WebViewClass, "loadUrl", "(Ljava/lang/String;)V");
+	jstring strjs = env->NewStringUTF( envptr, "about:blank" );
+	env->CallVoidMethod(envptr, wvObj, LoadURLMethod, strjs );
+	env->DeleteLocalRef( envptr, strjs );
 
 	jmethodID WebViewGetSettingMethod = env->GetMethodID(envptr, WebViewClass, "getSettings", "()Landroid/webkit/WebSettings;");
 	jobject websettings = env->CallObjectMethod(envptr, wvObj, WebViewGetSettingMethod );
@@ -70,31 +91,58 @@ void WebViewCreate( WebViewNativeActivityObject * w, const char * initialUrl )
 	env->CallVoidMethod( envptr, websettings, setJavaScriptEnabledMethod, true );
 	env->DeleteLocalRef( envptr, websettings );
 
-	if( initialUrl )
-	{
-		jmethodID LoadURLMethod = env->GetMethodID(envptr, WebViewClass, "loadUrl", "(Ljava/lang/String;)V");
-		jstring strjs = env->NewStringUTF( envptr, initialUrl );
-		env->CallVoidMethod(envptr, wvObj, LoadURLMethod, strjs );
-		env->DeleteLocalRef( envptr, strjs );
-	}
-	
     jmethodID setMeasuredDimensionMethodID = env->GetMethodID(envptr, WebViewClass, "setMeasuredDimension", "(II)V");
-    env->CallVoidMethod(envptr, wvObj, setMeasuredDimensionMethodID, 500, 500 );
+    env->CallVoidMethod(envptr, wvObj, setMeasuredDimensionMethodID, pw, ph );
 
 	jclass ViewClass = env->FindClass(envptr, "android/widget/LinearLayout");
 	jmethodID addViewMethod = env->GetMethodID(envptr, ViewClass, "addView", "(Landroid/view/View;)V");
 	env->CallVoidMethod( envptr, g_objRootView, addViewMethod, wvObj );
 
+	jclass WebMessagePortClass = env->FindClass(envptr, "android/webkit/WebMessagePort" );
+	jmethodID createWebMessageChannelMethod = env->GetMethodID(envptr, WebViewClass, "createWebMessageChannel", "()[Landroid/webkit/WebMessagePort;");
+	jobjectArray messageChannels = env->CallObjectMethod( envptr, wvObj, createWebMessageChannelMethod );
+	jobject mc0 = env->GetObjectArrayElement(envptr, messageChannels, 0); // MC1 is used elsewhere.
+
+	jclass HandlerClassType = env->FindClass(envptr, "android/os/Handler" );
+	jmethodID HandlerObjectConstructor = env->GetMethodID(envptr, HandlerClassType, "<init>", "(Landroid/os/Looper;)V");
+	jobject handlerObject = env->NewObject( envptr, HandlerClassType, HandlerObjectConstructor, useLooperForWebMessages );
+	handlerObject = env->NewGlobalRef(envptr, handlerObject);
+	jmethodID setWebMessageCallbackMethod = env->GetMethodID( envptr, WebMessagePortClass, "setWebMessageCallback", "(Landroid/webkit/WebMessagePort$WebMessageCallback;Landroid/os/Handler;)V" );
+
+	// Only can receive messages on MC0
+	env->CallVoidMethod( envptr, mc0, setWebMessageCallbackMethod, 0, handlerObject );
+	
+	// Generate backing bitmap and canvas.
+	jclass CanvasClass = env->FindClass(envptr, "android/graphics/Canvas");
+	jclass BitmapClass = env->FindClass(envptr, "android/graphics/Bitmap");
+	jmethodID createBitmap = env->GetStaticMethodID(envptr, BitmapClass, "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+	jclass bmpCfgCls = env->FindClass(envptr, "android/graphics/Bitmap$Config");
+	jstring bitmap_mode = env->NewStringUTF(envptr, "ARGB_8888");
+	jmethodID bmpClsValueOfMid = env->GetStaticMethodID(envptr, bmpCfgCls, "valueOf", "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
+	jobject jBmpCfg = env->CallStaticObjectMethod(envptr, bmpCfgCls, bmpClsValueOfMid, bitmap_mode);
+	jobject bitmap = env->CallStaticObjectMethod( envptr, BitmapClass, createBitmap, pw, ph, jBmpCfg );
+	jmethodID canvasConstructor = env->GetMethodID(envptr, CanvasClass, "<init>", "(Landroid/graphics/Bitmap;)V");
+	jobject canvas = env->NewObject(envptr, CanvasClass, canvasConstructor, bitmap );
+
+	env->DeleteLocalRef( envptr, CanvasClass );
+	env->DeleteLocalRef( envptr, BitmapClass );
+	env->DeleteLocalRef( envptr, bmpCfgCls );
+	env->DeleteLocalRef( envptr, bitmap_mode );
+
+	w->BackingBitmap = env->NewGlobalRef(envptr, bitmap );
+	w->BackingCanvas = env->NewGlobalRef(envptr, canvas );
 	w->WebViewObject = env->NewGlobalRef(envptr, wvObj);
+	w->MessageChannels = env->NewGlobalRef(envptr, messageChannels);
+	w->w = pw;
+	w->h = ph;	
 
 	env->DeleteLocalRef( envptr, WebViewClass );
 	env->DeleteLocalRef( envptr, activityClass );
 	env->DeleteLocalRef( envptr, WebSettingsClass );
 	env->DeleteLocalRef( envptr, ViewClass );
 }
- 
 
-void WebViewNativeGetPixels( WebViewNativeActivityObject * obj, void * pixel_data, int w, int h )
+void WebViewPostMessage( WebViewNativeActivityObject * w, const char * mesg, int initial )
 {
 	const struct JNINativeInterface * env = 0;
 	const struct JNINativeInterface ** envptr = &env;
@@ -104,37 +152,76 @@ void WebViewNativeGetPixels( WebViewNativeActivityObject * obj, void * pixel_dat
 	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
 	env = (*envptr);
 
-	jclass SurfaceViewClass = env->FindClass(envptr, "android/view/SurfaceView");
-	jclass PictureClass = env->FindClass(envptr, "android/graphics/Picture");
-	jclass CanvasClass = env->FindClass(envptr, "android/graphics/Canvas");
-	jclass BitmapClass = env->FindClass(envptr, "android/graphics/Bitmap");
+	jclass WebMessagePortClass = env->FindClass(envptr, "android/webkit/WebMessagePort" );
+	jobject mc1 = env->GetObjectArrayElement(envptr, w->MessageChannels, 1);
+
+	if( initial )
+	{
+		//https://stackoverflow.com/questions/41753104/how-do-you-use-webmessageport-as-an-alternative-to-addjavascriptinterface
+		jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
+		jmethodID postMessageMethod = env->GetMethodID(envptr, WebViewClass, "postWebMessage", "(Landroid/webkit/WebMessage;Landroid/net/Uri;)V");
+
+		jclass WebMessageClass = env->FindClass(envptr, "android/webkit/WebMessage" );
+		jstring strjs = env->NewStringUTF( envptr, mesg );
+		jmethodID WebMessageConstructor = env->GetMethodID(envptr, WebMessageClass, "<init>", "(Ljava/lang/String;[Landroid/webkit/WebMessagePort;)V");
+
+		// Need to generate a new message channel array.
+		jobjectArray jsUseWebPorts = env->NewObjectArray( envptr, 1, WebMessagePortClass, mc1);
+		jobject newwm = env->NewObject(envptr, WebMessageClass, WebMessageConstructor, strjs, jsUseWebPorts );
+
+		// Need Uri.EMPTY
+		jclass UriClass = env->FindClass(envptr, "android/net/Uri" );
+		jfieldID EmptyField = env->GetStaticFieldID( envptr, UriClass, "EMPTY", "Landroid/net/Uri;" );
+		jobject EmptyURI = env->GetStaticObjectField( envptr, UriClass, EmptyField );
+
+		env->CallVoidMethod( envptr, w->WebViewObject, postMessageMethod, newwm, EmptyURI );
+		env->DeleteLocalRef( envptr, WebViewClass );
+		env->DeleteLocalRef( envptr, WebMessageClass );
+		env->DeleteLocalRef( envptr, jsUseWebPorts );
+
+		env->DeleteLocalRef( envptr, newwm );
+		env->DeleteLocalRef( envptr, strjs );
+	}
+
+	env->DeleteLocalRef( envptr, WebMessagePortClass );
+}
+
+void WebViewRequestRenderToCanvas( WebViewNativeActivityObject * obj )
+{
+	const struct JNINativeInterface * env = 0;
+	const struct JNINativeInterface ** envptr = &env;
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+	const struct JNIInvokeInterface * jnii = *jniiptr;
+
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+	env = (*envptr);
+
 	jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
-	jmethodID createBitmap = env->GetStaticMethodID(envptr, BitmapClass, "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
 	jmethodID drawMethod = env->GetMethodID(envptr, WebViewClass, "draw", "(Landroid/graphics/Canvas;)V");
-	jclass bmpCfgCls = env->FindClass(envptr, "android/graphics/Bitmap$Config");
-	jstring bitmap_mode = env->NewStringUTF(envptr, "ARGB_8888");
-	jmethodID bmpClsValueOfMid = env->GetStaticMethodID(envptr, bmpCfgCls, "valueOf", "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
-	jobject jBmpCfg = env->CallStaticObjectMethod(envptr, bmpCfgCls, bmpClsValueOfMid, bitmap_mode);
-	jobject bitmap = env->CallStaticObjectMethod( envptr, BitmapClass, createBitmap, w, h, jBmpCfg );
-	jmethodID canvasConstructor = env->GetMethodID(envptr, CanvasClass, "<init>", "(Landroid/graphics/Bitmap;)V");
-	jobject canvas = env->NewObject(envptr, CanvasClass, canvasConstructor, bitmap );
-	env->CallVoidMethod( envptr, obj->WebViewObject, drawMethod, canvas );
-
-	jobject buffer = env->NewDirectByteBuffer(envptr, pixel_data, w*h*4 );
-
-	jmethodID copyPixelsBufferID = env->GetMethodID( envptr, BitmapClass, "copyPixelsToBuffer", "(Ljava/nio/Buffer;)V" );
-	env->CallVoidMethod( envptr, bitmap, copyPixelsBufferID, buffer );
-
-	env->DeleteLocalRef( envptr, SurfaceViewClass );
-	env->DeleteLocalRef( envptr, PictureClass );
-	env->DeleteLocalRef( envptr, CanvasClass );
-	env->DeleteLocalRef( envptr, BitmapClass );
+	env->CallVoidMethod( envptr, obj->WebViewObject, drawMethod, obj->BackingCanvas );
 	env->DeleteLocalRef( envptr, WebViewClass );
-	env->DeleteLocalRef( envptr, bmpCfgCls );
-	env->DeleteLocalRef( envptr, bitmap_mode );
-	env->DeleteLocalRef( envptr, bitmap );
-	env->DeleteLocalRef( envptr, canvas );
-	env->DeleteLocalRef( envptr, jBmpCfg );
+}
+
+void WebViewNativeGetPixels( WebViewNativeActivityObject * obj, uint32_t * pixel_data, int w, int h )
+{
+	const struct JNINativeInterface * env = 0;
+	const struct JNINativeInterface ** envptr = &env;
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+	const struct JNIInvokeInterface * jnii = *jniiptr;
+
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+	env = (*envptr);
+
+	jclass BitmapClass = env->FindClass(envptr, "android/graphics/Bitmap");
+	jobject buffer = env->NewDirectByteBuffer(envptr, pixel_data, obj->w*obj->h*4 );
+	jmethodID copyPixelsBufferID = env->GetMethodID( envptr, BitmapClass, "copyPixelsToBuffer", "(Ljava/nio/Buffer;)V" );
+	env->CallVoidMethod( envptr, obj->BackingBitmap, copyPixelsBufferID, buffer );
+
+	int i;
+	int num = obj->w * obj->h;
+	for( i = 0; i < num; i++ ) pixel_data[i] = bswap_32( pixel_data[i] );
+
+	env->DeleteLocalRef( envptr, BitmapClass );
 	env->DeleteLocalRef( envptr, buffer );
 
 	jnii->DetachCurrentThread( jniiptr );
@@ -149,10 +236,10 @@ void WebViewExecuteJavascript( WebViewNativeActivityObject * obj, const char * j
 	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
 	env = (*envptr);
 
-
 	jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
 	jmethodID WebViewEvalJSMethod = env->GetMethodID(envptr, WebViewClass, "evaluateJavascript", "(Ljava/lang/String;Landroid/webkit/ValueCallback;)V");
-	//evaluateJavascript(String script, ValueCallback<String> resultCallback) 
+
+	//WebView.evaluateJavascript(String script, ValueCallback<String> resultCallback) 
 	jstring strjs = env->NewStringUTF( envptr, js );
 	env->CallVoidMethod( envptr, obj->WebViewObject, WebViewEvalJSMethod, strjs, 0 );
 	env->DeleteLocalRef( envptr, WebViewClass );
@@ -171,10 +258,9 @@ char * WebViewGetLastWindowTitle( WebViewNativeActivityObject * obj )
 	jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
 	jmethodID getTitle = env->GetMethodID(envptr, WebViewClass, "getTitle", "()Ljava/lang/String;");
 	jobject titleObject = env->CallObjectMethod( envptr, obj->WebViewObject, getTitle );
-	const char *nativeString = strdup( env->GetStringUTFChars(envptr, titleObject, 0) );
+	char *nativeString = strdup( env->GetStringUTFChars(envptr, titleObject, 0) );
 	env->DeleteLocalRef( envptr, titleObject );
 	env->DeleteLocalRef( envptr, WebViewClass );
-
 
 	return nativeString;
 }
