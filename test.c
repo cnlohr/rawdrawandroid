@@ -413,7 +413,7 @@ void SetupJSThread()
 	pthread_create( &jsthread, 0, JavscriptThread, 0 );
 }
 
-int main()
+int main( int argc, char ** argv )
 {
 	int x, y;
 	double ThisTime;
