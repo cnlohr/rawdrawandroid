@@ -341,39 +341,79 @@ void * JavscriptThread( void * v )
 
 	jclass MessageQueueClass = env->FindClass(envptr, "android/os/MessageQueue");
 	jmethodID nextMethod = env->GetMethodID( envptr, MessageQueueClass, "next", "()Landroid/os/Message;" );
-
-	jclass MessageClass = env->FindClass(envptr, "android/os/Message");
-    jfieldID objid = env->GetFieldID( envptr, MessageClass, "obj", "Ljava/lang/Object;" );
-
-	jclass PairClass = env->FindClass(envptr, "android/util/Pair");
-    jfieldID pairfirst  = env->GetFieldID( envptr, PairClass, "first", "Ljava/lang/Object;" );
 	
+	jclass MessageClass = env->FindClass(envptr, "android/os/Message");
+	jfieldID objid = env->GetFieldID( envptr, MessageClass, "obj", "Ljava/lang/Object;" );
+	jclass PairClass = env->FindClass(envptr, "android/util/Pair");
+	jfieldID pairfirst  = env->GetFieldID( envptr, PairClass, "first", "Ljava/lang/Object;" );
+
 	while(1)
 	{
-
 		// Instead of using Looper::loop(), we just call next on the looper object.
-
 		jobject msg = env->CallObjectMethod( envptr, lque, nextMethod );
 		jobject innerObj = env->GetObjectField( envptr, msg, objid );
-		jobject MessagePayload = env->GetObjectField( envptr, innerObj, pairfirst );
-		// MessagePayload is a org.chromium.content_public.browser.MessagePayload
+		const char * name;
+		jstring strObj;
+		jclass innerClass;
+		
+		// Check Object Type
+		{
+			innerClass = env->GetObjectClass( envptr, innerObj );
+			jmethodID mid = env->GetMethodID( envptr, innerClass, "getClass", "()Ljava/lang/Class;");
+			jobject clsObj = env->CallObjectMethod( envptr, innerObj, mid );
+			jclass clazzz = env->GetObjectClass( envptr, clsObj );
+			mid = env->GetMethodID(envptr, clazzz, "getName", "()Ljava/lang/String;");
+			strObj = (jstring)env->CallObjectMethod( envptr, clsObj, mid);
+			name = env->GetStringUTFChars( envptr, strObj, 0);
+			env->DeleteLocalRef( envptr, clsObj );
+			env->DeleteLocalRef( envptr, clazzz );
+		}
 
-		jclass mpclass = env->GetObjectClass( envptr, MessagePayload );
+		if( strcmp( name, "z5" ) == 0 )
+		{
+			// Special, Some Androids (notably Meta Quest) use a different private message type.
+			jfieldID mstrf  = env->GetFieldID( envptr, innerClass, "a", "[B" );
+			jbyteArray jba = (jstring)env->GetObjectField(envptr, innerObj, mstrf );
+			int len = env->GetArrayLength( envptr, jba );
+			jboolean isCopy = 0;
+			jbyte * bufferPtr = env->GetByteArrayElements(envptr, jba, &isCopy);
 
-		// Get field "b" which is the web message payload.
-		// If you are using binary sockets, it will be in `c` and be a byte array.
-		jfieldID mstrf  = env->GetFieldID( envptr, mpclass, "b", "Ljava/lang/String;" );
-		jstring strObjDescr = (jstring)env->GetObjectField(envptr, MessagePayload, mstrf );
+			if( len >= 6 )
+			{
+				const char *descr = (const char*)bufferPtr + 6;
+				char tcpy[len-5];
+				memcpy( tcpy, descr, len-6 );
+				tcpy[len-6] = 0;
+				snprintf( fromJSBuffer, sizeof( fromJSBuffer)-1, "WebMessage: %s\n", tcpy );
 
-		const char *descr = env->GetStringUTFChars( envptr, strObjDescr, 0);
-		snprintf( fromJSBuffer, sizeof( fromJSBuffer)-1, "WebMessage: %s\n", descr );
+				env->DeleteLocalRef( envptr, jba );
+			}
+		}
+		else
+		{
+			jobject MessagePayload = env->GetObjectField( envptr, innerObj, pairfirst );
+			// MessagePayload is a org.chromium.content_public.browser.MessagePayload
 
-        env->ReleaseStringUTFChars(envptr, strObjDescr, descr);
-		env->DeleteLocalRef( envptr, mpclass );
+			jclass mpclass = env->GetObjectClass( envptr, MessagePayload );
+
+			// Get field "b" which is the web message payload.
+			// If you are using binary sockets, it will be in `c` and be a byte array.
+			jfieldID mstrf  = env->GetFieldID( envptr, mpclass, "b", "Ljava/lang/String;" );
+			jstring strObjDescr = (jstring)env->GetObjectField(envptr, MessagePayload, mstrf );
+
+			const char *descr = env->GetStringUTFChars( envptr, strObjDescr, 0);
+			snprintf( fromJSBuffer, sizeof( fromJSBuffer)-1, "WebMessage: %s\n", descr );
+
+			env->ReleaseStringUTFChars(envptr, strObjDescr, descr);
+			env->DeleteLocalRef( envptr, strObjDescr );
+			env->DeleteLocalRef( envptr, MessagePayload );
+			env->DeleteLocalRef( envptr, mpclass );
+		}
+		env->ReleaseStringUTFChars(envptr, strObj, name);
+		env->DeleteLocalRef( envptr, strObj );
 		env->DeleteLocalRef( envptr, msg );
-		env->DeleteLocalRef( envptr, strObjDescr );
 		env->DeleteLocalRef( envptr, innerObj );
-		env->DeleteLocalRef( envptr, MessagePayload );
+		env->DeleteLocalRef( envptr, innerClass );
 	}
 }
 

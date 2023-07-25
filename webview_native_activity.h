@@ -67,12 +67,12 @@ void WebViewCreate( WebViewNativeActivityObject * w, const char * initial_url, j
 	jmethodID activityGetContextMethod = env->GetMethodID(envptr, activityClass, "getApplicationContext", "()Landroid/content/Context;");
 	jobject contextObject = env->CallObjectMethod(envptr, clazz, activityGetContextMethod);
 
-    jmethodID WebViewConstructor = env->GetMethodID(envptr, WebViewClass, "<init>", "(Landroid/content/Context;)V");
+	jmethodID WebViewConstructor = env->GetMethodID(envptr, WebViewClass, "<init>", "(Landroid/content/Context;)V");
 	jobject wvObj = env->NewObject(envptr, WebViewClass, WebViewConstructor, contextObject );
 
 	// Unknown reason why - if you don't first load about:blank, it sometimes doesn't render right?
 	// Even more annoying - you can't pre-use loadUrl if you want to use message channels.
-    jmethodID WebViewLoadBaseURLMethod = env->GetMethodID(envptr, WebViewClass, "loadDataWithBaseURL", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+	jmethodID WebViewLoadBaseURLMethod = env->GetMethodID(envptr, WebViewClass, "loadDataWithBaseURL", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
 	jstring strul = env->NewStringUTF( envptr, "http://example.com" );
 	jstring strdata = env->NewStringUTF( envptr, "not-yet-loaded" );
 	jstring strmime = env->NewStringUTF( envptr, "text/html" );
@@ -98,8 +98,8 @@ void WebViewCreate( WebViewNativeActivityObject * w, const char * initial_url, j
 	env->CallVoidMethod( envptr, websettings, setJavaScriptEnabledMethod, true );
 	env->DeleteLocalRef( envptr, websettings );
 
-    jmethodID setMeasuredDimensionMethodID = env->GetMethodID(envptr, WebViewClass, "setMeasuredDimension", "(II)V");
-    env->CallVoidMethod(envptr, wvObj, setMeasuredDimensionMethodID, pw, ph );
+	jmethodID setMeasuredDimensionMethodID = env->GetMethodID(envptr, WebViewClass, "setMeasuredDimension", "(II)V");
+	env->CallVoidMethod(envptr, wvObj, setMeasuredDimensionMethodID, pw, ph );
 
 	jclass ViewClass = env->FindClass(envptr, "android/widget/LinearLayout");
 	jmethodID addViewMethod = env->GetMethodID(envptr, ViewClass, "addView", "(Landroid/view/View;)V");
@@ -160,7 +160,7 @@ int  WebViewGetProgress( WebViewNativeActivityObject * obj )
 	env = (*envptr);
 
 	jclass WebViewClass = env->FindClass(envptr, "android/webkit/WebView");
-    jmethodID WebViewProgress = env->GetMethodID(envptr, WebViewClass, "getProgress", "()I");
+	jmethodID WebViewProgress = env->GetMethodID(envptr, WebViewClass, "getProgress", "()I");
 	int ret = env->CallIntMethod( envptr, obj->WebViewObject, WebViewProgress );
 	env->DeleteLocalRef( envptr, WebViewClass );
 	return ret;
