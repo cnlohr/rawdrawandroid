@@ -9,7 +9,7 @@
   - [Development Environment](https://github.com/cnlohr/rawdrawandroid#development-environment)
     - [Linux install Android Studio with NDK.](https://github.com/cnlohr/rawdrawandroid#linux-install-android-studio-with-ndk)
     - [Steps for GUI-less install (Windows, WSL)](https://github.com/cnlohr/rawdrawandroid#steps-for-gui-less-install-windows-wsl)
-      - [Extra note for actually deploying to device in Windows](Extra note for actually deploying to device in Windows)
+      - [Extra note for actually deploying to device in Windows](https://github.com/cnlohr/rawdrawandroid#extra-note-for-actually-deploying-to-device-in-windows)
       - [Rest of steps](https://github.com/cnlohr/rawdrawandroid#rest-of-steps)
   - [If you are going to use this](https://github.com/cnlohr/rawdrawandroid#if-you-are-going-to-use-this)
   - [Helper functions](https://github.com/cnlohr/rawdrawandroid#helper-functions)
