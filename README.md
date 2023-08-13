@@ -4,7 +4,24 @@
 
 # Table of Contents
 
-[rawdrawandroid](https://github.com/cnlohr/rawdrawandroid#rawdrawandroid)
+  - [rawdrawandroid](https://github.com/cnlohr/rawdrawandroid#rawdrawandroid)
+  - [why?](https://github.com/cnlohr/rawdrawandroid#why)
+  - [Development Environment](https://github.com/cnlohr/rawdrawandroid#development-environment)
+    - [Linux install Android Studio with NDK.](https://github.com/cnlohr/rawdrawandroid#linux-install-android-studio-with-ndk)
+    - [Steps for GUI-less install (Windows, WSL)](Steps for GUI-less install (Windows, WSL))
+      - [Extra note for actually deploying to device in Windows](Extra note for actually deploying to device in Windows)
+      - [Rest of steps](https://github.com/cnlohr/rawdrawandroid#rest-of-steps)
+  - [If you are going to use this](https://github.com/cnlohr/rawdrawandroid#if-you-are-going-to-use-this)
+  - [Helper functions](https://github.com/cnlohr/rawdrawandroid#helper-functions)
+  - [Departures from regular rawdraw.](https://github.com/cnlohr/rawdrawandroid#departures-from-regular-rawdraw)
+  - [Google Play](https://github.com/cnlohr/rawdrawandroid#google-play)
+    - [Part 0: Changes to your app.](https://github.com/cnlohr/rawdrawandroid#part-0-changes-to-your-app)
+    - [Keys: You will want a key for yourself that's a real key. Not the fake one.](https://github.com/cnlohr/rawdrawandroid#keys--you-will-want-a-key-for-yourself-thats-a-real-key--not-the-fake-one)
+  - [Let Google create and manage my app signing key (recommended)](https://github.com/cnlohr/rawdrawandroid#let-google-create-and-manage-my-app-signing-key-recommended)
+    - [Export and upload a key and certificate from a Java keystore](https://github.com/cnlohr/rawdrawandroid#export-and-upload-a-key-and-certificate-from-a-java-keystore)
+    - [Prepping your app for upload.](https://github.com/cnlohr/rawdrawandroid#prepping-your-app-for-upload)
+    - [Pre-SDK-32-Tools](https://github.com/cnlohr/rawdrawandroid#pre-sdk-32-tools)
+  - [TODO](https://github.com/cnlohr/rawdrawandroid#todo)
 
 # rawdrawandroid
 
