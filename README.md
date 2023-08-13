@@ -17,7 +17,7 @@
   - [Google Play](https://github.com/cnlohr/rawdrawandroid#google-play)
     - [Part 0: Changes to your app.](https://github.com/cnlohr/rawdrawandroid#part-0-changes-to-your-app)
     - [Keys: You will want a key for yourself that's a real key. Not the fake one.](https://github.com/cnlohr/rawdrawandroid#keys--you-will-want-a-key-for-yourself-thats-a-real-key--not-the-fake-one)
-  - [Let Google create and manage my app signing key (recommended)](https://github.com/cnlohr/rawdrawandroid#let-google-create-and-manage-my-app-signing-key-recommended)
+  - Let Google create and manage my app signing key (recommended)
     - [Export and upload a key and certificate from a Java keystore](https://github.com/cnlohr/rawdrawandroid#export-and-upload-a-key-and-certificate-from-a-java-keystore)
     - [Prepping your app for upload.](https://github.com/cnlohr/rawdrawandroid#prepping-your-app-for-upload)
     - [Pre-SDK-32-Tools](https://github.com/cnlohr/rawdrawandroid#pre-sdk-32-tools)
