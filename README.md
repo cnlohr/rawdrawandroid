@@ -2,6 +2,27 @@
 
 ### Update: Works with OpenXR [on Meta Quest](https://github.com/cnlohr/tsopenxr/tree/master/meta_quest)!
 
+# Table of Contents
+
+  - [rawdrawandroid](#rawdrawandroid)
+  - [why?](#why)
+  - [Development Environment](#development-environment)
+    - [Linux install Android Studio with NDK.](#linux-install-android-studio-with-ndk)
+    - [Steps for GUI-less install (Windows, WSL)](#steps-for-gui-less-install-windows-wsl)
+      - [Extra note for actually deploying to device in Windows](#extra-note-for-actually-deploying-to-device-in-windows)
+      - [Rest of steps](#rest-of-steps)
+  - [If you are going to use this](#if-you-are-going-to-use-this)
+  - [Helper functions](#helper-functions)
+  - [Departures from regular rawdraw.](#departures-from-regular-rawdraw)
+  - [Google Play](#google-play)
+    - [Part 0: Changes to your app.](#part-0-changes-to-your-app)
+    - [Keys: You will want a key for yourself that's a real key. Not the fake one.](#keys--you-will-want-a-key-for-yourself-thats-a-real-key--not-the-fake-one)
+    - Let Google create and manage my app signing key (recommended)
+    - [Export and upload a key and certificate from a Java keystore](#export-and-upload-a-key-and-certificate-from-a-java-keystore)
+    - [Prepping your app for upload.](#prepping-your-app-for-upload)
+    - [Pre-SDK-32-Tools](#pre-sdk-32-tools)
+  - [TODO](#todo)
+
 # rawdrawandroid
 
 Ever wanted to write C code and run it on Android?  Sick of multi-megabyte
