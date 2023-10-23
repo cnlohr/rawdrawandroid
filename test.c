@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <math.h>
 #include <string.h>
 #include "os_generic.h"
@@ -253,9 +254,9 @@ void CheckWebViewTitle( void * v )
 		document.body.innerHTML = '6'; \
 		var port; \
 		function pull() {\
-			port.postMessage(\"pingpingpingping1\");\
-			port.postMessage(\"pingpingpingping2\");\
-			document.body.innerHTML = i++; \
+			port.postMessage(\"From JS->C:\" + i);\
+			i++;\
+			document.body.innerHTML = \"In HTML \" + i; \
 		}\
 		onmessage = function (e) { \
 			port = e.ports[0]; \
@@ -266,11 +267,9 @@ void CheckWebViewTitle( void * v )
 		} \
 		" );
 		usleep(200000);
-		WebViewPostMessage( wvn, "YYYYXXXXZZZZWWWW", 1 );
+		WebViewPostMessage( wvn, "Something", 1 );
 		usleep(200000);
 	}
-
-//	WebViewPostMessage( wvn, "YYYYXXXXZZZZWWWW", 0 );
 
 	WebViewExecuteJavascript( wvn, "\
 		/*document.body.innerHTML = '<HTML><BODY>' + i + '</BODY></HTML>';*/ \
@@ -342,7 +341,7 @@ void PrintObjectString( jobject bundle )
 	const struct JNINativeInterface * env = 0;
 	const struct JNINativeInterface ** envptr = &env;
 	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-	jobject clazz = gapp->activity->clazz;
+	//jobject clazz = gapp->activity->clazz;
 	const struct JNIInvokeInterface * jnii = *jniiptr;
 
 	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
@@ -379,7 +378,7 @@ void * JavscriptThread( void * v )
 	const struct JNINativeInterface * env = 0;
 	const struct JNINativeInterface ** envptr = &env;
 	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-	jobject clazz = gapp->activity->clazz;
+	//jobject clazz = gapp->activity->clazz;
 	const struct JNIInvokeInterface * jnii = *jniiptr;
 
 	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
@@ -422,11 +421,11 @@ void * JavscriptThread( void * v )
 
 	jclass MessageClass = env->FindClass(envptr, "android/os/Message");
 	jmethodID getDataMethod = env->GetMethodID( envptr, MessageClass, "getData", "()Landroid/os/Bundle;" );
-	jmethodID getTargetMethod = env->GetMethodID( envptr, MessageClass, "getTarget", "()Landroid/os/Handler;" );
+	//jmethodID getTargetMethod = env->GetMethodID( envptr, MessageClass, "getTarget", "()Landroid/os/Handler;" );
 
 
 	jclass HandlerClass = env->FindClass(envptr, "android/os/Handler");
-	jmethodID getLooperMethod = env->GetMethodID( envptr, HandlerClass, "getLooper", "()Landroid/os/Looper;" );
+	//jmethodID getLooperMethod = env->GetMethodID( envptr, HandlerClass, "getLooper", "()Landroid/os/Looper;" );
 	
     jfieldID objid = env->GetFieldID( envptr, MessageClass, "obj", "Ljava/lang/Object;" );
 
@@ -464,7 +463,7 @@ void * JavscriptThread( void * v )
 		jobject msg = env->CallObjectMethod( envptr, lque, nextMethod );
 		jobject innerObj = env->GetObjectField( envptr, msg, objid );
 		jobject MessagePaypload = env->GetObjectField( envptr, innerObj, pairfirst );
-		jobject MessageSecond = env->GetObjectField( envptr, innerObj, pairsecond );
+		//jobject MessageSecond = env->GetObjectField( envptr, innerObj, pairsecond );
 
 		// MessagePayload is a org.chromium.content_public.browser.MessagePayload
 		jclass mpclass = env->GetObjectClass( envptr, MessagePaypload );
