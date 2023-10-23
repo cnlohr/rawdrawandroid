@@ -640,10 +640,11 @@ int main()
 		iframeno++;
 
 		CNFGHandleInput();
+
 		AccCheck();
 
 		RunCallbackOnUIThread( CheckWebViewTitle, &MyWebView );
-		sleep(1);
+
 		if( suspended ) { usleep(50000); continue; }
 
 		CNFGClearFrame();
