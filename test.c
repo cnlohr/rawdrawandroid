@@ -234,8 +234,11 @@ void HandleResume()
 }
 
 uint32_t randomtexturedata[256*256];
-uint32_t webviewdata[500*500];
 
+
+
+
+uint32_t webviewdata[500*500];
 
 jobject GlobalWebViewObject = 0;
 jobject SurfaceViewObject;
@@ -297,67 +300,11 @@ void SetupWebView( void * v )
 	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
 	env = (*envptr);
 
-/*
-	jclass LooperClass = env->FindClass(envptr, "android/os/Looper");
-	jmethodID mainLooperMethod = env->GetStaticMethodID( envptr, LooperClass, "getMainLooper", "()Landroid/os/Looper;");
-	jobject attachLooper = env->CallStaticObjectMethod( envptr, LooperClass, mainLooperMethod );
-
-	attachLooper = env->NewGlobalRef(envptr, attachLooper);
-*/
 	jobject attachLooper = g_attachLooper;
 	printf( "IN LOOPER: %p\n", attachLooper );
 
 	WebViewCreate( wvn, attachLooper );
 }
-
-void PrintClassOfObject( jobject bundle )
-{
-	const struct JNINativeInterface * env = 0;
-	const struct JNINativeInterface ** envptr = &env;
-	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-	//jobject clazz = gapp->activity->clazz;
-	const struct JNIInvokeInterface * jnii = *jniiptr;
-	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
-	env = (*envptr);
-
-	jclass myclass = env->GetObjectClass( envptr, bundle );
-	jmethodID mid = env->GetMethodID( envptr, myclass, "getClass", "()Ljava/lang/Class;");
-	jobject clsObj = env->CallObjectMethod( envptr, bundle, mid );
-	jclass clazzz = env->GetObjectClass( envptr, clsObj );
-	mid = env->GetMethodID(envptr, clazzz, "getName", "()Ljava/lang/String;");
-	jstring strObj = (jstring)env->CallObjectMethod( envptr, clsObj, mid);
-	char *name = strdup( env->GetStringUTFChars( envptr, strObj, 0) );
-	printf( "Class type: %s\n", name );
-
-	env->DeleteLocalRef( envptr, myclass );
-	env->DeleteLocalRef( envptr, clsObj );
-	env->DeleteLocalRef( envptr, clazzz );
-	env->DeleteLocalRef( envptr, strObj );
-	free( name );
-}
-
-void PrintObjectString( jobject bundle )
-{
-	const struct JNINativeInterface * env = 0;
-	const struct JNINativeInterface ** envptr = &env;
-	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
-	//jobject clazz = gapp->activity->clazz;
-	const struct JNIInvokeInterface * jnii = *jniiptr;
-
-	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
-	env = (*envptr);
-
-	jclass myclass = env->GetObjectClass( envptr, bundle );
-	jmethodID toStringMethod = env->GetMethodID( envptr, myclass, "toString", "()Ljava/lang/String;");
-	jstring strObjDescr = (jstring)env->CallObjectMethod( envptr, bundle, toStringMethod);
-	char *descr = strdup( env->GetStringUTFChars( envptr, strObjDescr, 0) );
-	printf( "String: %s\n", descr );
-
-	env->DeleteLocalRef( envptr, myclass );
-	env->DeleteLocalRef( envptr, strObjDescr );
-	free( descr );
-}
-
 
 pthread_t jsthread;
 
@@ -373,6 +320,8 @@ static int process_aux( int dummy1, int dummy2, void * dummy3 ) {
 	return 1;
 }
 
+
+// This thread is what runs parallel to the javascript, receiving webmessages.
 void * JavscriptThread( void * v )
 {
 	const struct JNINativeInterface * env = 0;
