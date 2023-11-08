@@ -39,9 +39,7 @@ jobs:
             && sudo $SDKMANAGER --sdk_root=${ANDROID_HOME}
                     "build-tools;29.0.3"
                     "cmake;3.10.2.4988404"
-                    "ndk;22.1.7171670"
-                    "patcher;v4"
-                    "platform-tools"
+                    "ndk;22.1.7171670"                    "platform-tools"
                     "platforms;android-30"
                     "tools"
                     # This list can probably be reduced
