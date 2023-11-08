@@ -256,6 +256,74 @@ void AudioCallback( struct CNFADriver * sd, short * out, short * in, int framesp
 }
 */
 
+void MakeNotification( const char * channelID, const char * channelName, const char * title, const char * message )
+{
+	static int id;
+	id++;
+
+	const struct JNINativeInterface * env = 0;
+	const struct JNINativeInterface ** envptr = &env;
+	const struct JNIInvokeInterface ** jniiptr = gapp->activity->vm;
+	const struct JNIInvokeInterface * jnii = *jniiptr;
+
+	jnii->AttachCurrentThread( jniiptr, &envptr, NULL);
+	env = (*envptr);
+
+	jstring channelIDStr = env->NewStringUTF( ENVCALL channelID );
+	jstring channelNameStr = env->NewStringUTF( ENVCALL channelName );
+
+	// Runs getSystemService(Context.NOTIFICATION_SERVICE).
+	jclass NotificationManagerClass = env->FindClass( ENVCALL "android/app/NotificationManager" );
+	jclass activityClass = env->GetObjectClass( ENVCALL gapp->activity->clazz );
+	jmethodID MethodGetSystemService = env->GetMethodID( ENVCALL activityClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
+	jstring notificationServiceName = env->NewStringUTF( ENVCALL "notification" );
+	jobject notificationServiceObj = env->CallObjectMethod( ENVCALL gapp->activity->clazz, MethodGetSystemService, notificationServiceName);
+
+	// create the Notification channel.
+	jclass notificationChannelClass = env->FindClass( ENVCALL "android/app/NotificationChannel" );
+	jmethodID notificationChannelConstructorID = env->GetMethodID( ENVCALL notificationChannelClass, "<init>", "(Ljava/lang/String;Ljava/lang/CharSequence;I)V" );
+	jobject notificationChannelObj = env->NewObject( ENVCALL notificationChannelClass, notificationChannelConstructorID, channelIDStr, channelNameStr, 3 ); // IMPORTANCE_DEFAULT
+	jmethodID createNotificationChannelID = env->GetMethodID( ENVCALL NotificationManagerClass, "createNotificationChannel", "(Landroid/app/NotificationChannel;)V" );
+	env->CallVoidMethod( ENVCALL notificationServiceObj, createNotificationChannelID, notificationChannelObj );
+
+	env->DeleteLocalRef( ENVCALL channelNameStr );
+	env->DeleteLocalRef( ENVCALL notificationChannelObj );
+
+	// Create the Notification builder.
+	jclass classBuilder = env->FindClass( ENVCALL "android/app/Notification$Builder" );
+	jstring titleStr = env->NewStringUTF( ENVCALL title );
+	jstring messageStr = env->NewStringUTF( ENVCALL message );
+	jmethodID eventConstructor = env->GetMethodID( ENVCALL classBuilder, "<init>", "(Landroid/content/Context;Ljava/lang/String;)V" );
+	jobject eventObj = env->NewObject( ENVCALL classBuilder, eventConstructor, gapp->activity->clazz, channelIDStr );
+	jmethodID setContentTitleID = env->GetMethodID( ENVCALL classBuilder, "setContentTitle", "(Ljava/lang/CharSequence;)Landroid/app/Notification$Builder;" );
+	jmethodID setContentTextID = env->GetMethodID( ENVCALL classBuilder, "setContentText", "(Ljava/lang/CharSequence;)Landroid/app/Notification$Builder;" );
+	jmethodID setSmallIconID = env->GetMethodID( ENVCALL classBuilder, "setSmallIcon", "(I)Landroid/app/Notification$Builder;" );
+
+	// You could do things like setPriority, or setContentIntent if you want it to do something when you click it.
+
+	env->CallObjectMethod( ENVCALL eventObj, setContentTitleID, titleStr );
+	env->CallObjectMethod( ENVCALL eventObj, setContentTextID, messageStr );
+	env->CallObjectMethod( ENVCALL eventObj, setSmallIconID, 17301504 ); // R.drawable.alert_dark_frame
+
+	// eventObj.build()
+	jmethodID buildID = env->GetMethodID( ENVCALL classBuilder, "build", "()Landroid/app/Notification;" );
+	jobject notification = env->CallObjectMethod( ENVCALL eventObj, buildID );
+
+	// NotificationManager.notify(...)
+	jmethodID notifyID = env->GetMethodID( ENVCALL NotificationManagerClass, "notify", "(ILandroid/app/Notification;)V" );
+	env->CallVoidMethod( ENVCALL notificationServiceObj, notifyID, id, notification );
+
+	env->DeleteLocalRef( ENVCALL notification );
+	env->DeleteLocalRef( ENVCALL titleStr );
+	env->DeleteLocalRef( ENVCALL activityClass );
+	env->DeleteLocalRef( ENVCALL messageStr );
+	env->DeleteLocalRef( ENVCALL channelIDStr );
+	env->DeleteLocalRef( ENVCALL NotificationManagerClass );
+	env->DeleteLocalRef( ENVCALL notificationServiceObj );
+	env->DeleteLocalRef( ENVCALL notificationServiceName );
+
+}
+
 void HandleThisWindowTermination()
 {
 	suspended = 1;
@@ -465,6 +533,11 @@ int main( int argc, char ** argv )
 	{
 		int i;
 		iframeno++;
+
+		if( iframeno == 200 )
+		{
+			MakeNotification( "default", "rawdraw alerts", "rawdraw", "Hit frame two hundred\nNew Line" );
+		}
 
 		CNFGHandleInput();
 		AccCheck();
