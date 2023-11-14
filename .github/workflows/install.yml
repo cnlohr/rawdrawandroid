@@ -47,13 +47,13 @@ jobs:
     - name: Build APK
       run: make keystore && make
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: apk
         path: ./*.apk
 
     - name: Upload Libraries (*.so)
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: lib
         path: "makecapk/lib"
