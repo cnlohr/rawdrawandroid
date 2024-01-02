@@ -195,5 +195,5 @@ run : push
 	$(ADB) shell am start -n $(PACKAGENAME)/$(ACTIVITYNAME)
 
 clean :
-	rm -rf temp.apk makecapk.apk makecapk $(APKFILE)
+	rm -rf AndroidManifest.xml temp.apk makecapk.apk makecapk $(APKFILE)
 
