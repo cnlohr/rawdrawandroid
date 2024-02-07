@@ -106,7 +106,7 @@ In order to push the APK to your phone, you need `adb` installed in Windows as w
 
 2. Install prerequisites:
 ```
-sudo apt install openjdk-11-jdk-headless adb unzip zip
+sudo apt install openjdk-17-jdk-headless adb unzip zip
 ```
 2. Download "Command line tools only": https://developer.android.com/studio#downloads - you can get a URL and use `wget` in WSL to download the tools by clicking on the **"Linux"** toolset, then right-clicking on the accept link and saying copy link to location.  Then you can say `wget <link>` in WSL.
 3. Create a folder for the Android SDK and export it. You may want to add that export to your `~/.bashrc`:
@@ -123,7 +123,7 @@ For earler versions of tools see note for pre-SDK-32-Tools.
 If your platform command-line tools are **30**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following:
 ```
 yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "platform-tools" "platforms;android-30" "tools"
 ```
 
 **NOTE** If you are upgrading NDK versions, you may need to remove old versions, this Makefile does not necessarily do the best job at auto-selecting NDK versions.
