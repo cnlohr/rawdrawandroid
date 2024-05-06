@@ -126,6 +126,12 @@ yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --li
 $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "platform-tools" "platforms;android-30" "tools"
 ```
 
+If you want to target Android 34 (not recommended in 2024, for device compatibility, you will need to execute the following):
+```
+yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;34.0.0" "ndk;26.2.11394342" "platform-tools" "platforms;android-34" "tools" "cmake;3.10.2.4988404"
+```
+
 **NOTE** If you are upgrading NDK versions, you may need to remove old versions, this Makefile does not necessarily do the best job at auto-selecting NDK versions.
 
 You can see all avialable versions of software with this command:
