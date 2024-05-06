@@ -1,4 +1,4 @@
-[![rawdrawandroid](https://github.com/dreua/rawdrawandroid/actions/workflows/install.yml/badge.svg)](https://github.com/dreua/rawdrawandroid/actions/workflows/install.yml)
+[![rawdrawandroid](https://github.com/cnlohr/rawdrawandroid/actions/workflows/install.yml/badge.svg)](https://github.com/dreua/rawdrawandroid/actions/workflows/install.yml)
 
 ### Update: Works with OpenXR [on Meta Quest](https://github.com/cnlohr/tsopenxr/tree/master/meta_quest)!
 
