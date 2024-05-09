@@ -43,7 +43,7 @@ With this framework you get a demo which has:
 
 DISCLAIMER: I take no warranty or responsibility for this code.  Use at your own risk.  I've never released an app on the app store, so there may be some fundamental issue with using this toolset to make commercial apps!
 
-For support, you can try chatting with folks on my discord: https://discord.com/invite/CCeyWyZ
+For support, we have a Discord, but it is not public at the moment, feel free to reach out to @cnlohr on Discord, with a short message as to why you'd like to join, and he can send you an invite!
 
 # Why?
 
