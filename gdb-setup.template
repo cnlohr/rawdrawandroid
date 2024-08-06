@@ -1,0 +1,38 @@
+set osabi GNU/Linux
+file ${ZYGOTE_PATH}
+set solib-absolute-prefix ${SYSROOT}
+set solib-search-path ${SYSROOT}:${SYSROOT}/system/bin:${SYSROOT}/system/lib${APP64}
+
+# SIG33 is apparently used by android for back traces (using Bionic?)
+# If not ignored they'll apparently cause gdb to stop a lot, unnecessarily
+handle SIG33 pass nostop noprint
+
+python
+def target_remote_with_retry(target, timeout_seconds):
+  import time
+  end_time = time.time() + timeout_seconds
+  while True:
+    try:
+      gdb.execute('target remote ' + target)
+      return True
+    except gdb.error as e:
+      time_left = end_time - time.time()
+      if time_left < 0 or time_left > timeout_seconds:
+        print("Error: unable to connect to device.")
+        print(e)
+        return False
+      time.sleep(min(0.25, time_left))
+target_remote_with_retry(':${HOST_PORT}', ${GDB_TIMEOUT})
+end
+
+# TODO: Should probably support leaning on jdb if it's present on the host
+# It doesn't get used other than to allow us to run the process on the android
+# device and "wait for the debugger".
+# Currently if a bad state is reached fast enough after startup, gdb might not
+# attach fast enough to be as useful as it otherwise might.
+#python
+#def start_jdb_to_unblock_app():
+#  import subprocess
+#  subprocess.Popen(['${NDK}/toolchains/llvm/prebuilt/linux-x86_64/python3/bin/python3', '${NDK}/prebuilt/linux-x86_64/bin/ndk-gdb.py', '--internal-wakeup-pid-with-jdb', 'adb', u'$DEVICE_ID', '/usr/bin/jdb', '$TARGET_PID', 'True'])
+#start_jdb_to_unblock_app()
+#end
