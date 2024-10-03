@@ -123,6 +123,28 @@ void HandleMotion( int x, int y, int mask )
 	lastmotiony = y;
 }
 
+//writes the text to a file to path (example): /storage/emulated/0/Android/data/org.yourorg.cnfgtest/files
+// You would not normally want to do this, but it's an example of how to do local storage.
+void Log(const char *fmt, ...)
+{
+	const char* getpath = AndroidGetExternalFilesDir();
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), "%s/log.txt", getpath);
+	FILE *f = fopen(buffer, "w");
+	if (f == NULL)
+	{
+		exit(1);
+	}
+
+	va_list arg;
+	va_start(arg, fmt);
+	vsnprintf(buffer, sizeof(buffer), fmt, arg);
+	va_end(arg);	
+
+	fprintf(f, "%s\n", buffer);
+
+	fclose(f);
+}
 #define HMX 162
 #define HMY 162
 short screenx, screeny;
@@ -496,6 +518,8 @@ int main( int argc, char ** argv )
 	double ThisTime;
 	double LastFPSTime = OGGetAbsoluteTime();
 
+	Log( "Starting Up" );
+
 	CNFGBGColor = 0x000040ff;
 	CNFGSetupFullscreen( "Test Bench", 0 );
 	
@@ -528,6 +552,8 @@ int main( int argc, char ** argv )
 	// Create webview and wait for its completion
 	RunCallbackOnUIThread( SetupWebView, &MyWebView );
 	while( !MyWebView.WebViewObject ) usleep(1);
+
+	Log( "Startup Complete" );
 
 	while(1)
 	{
