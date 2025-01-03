@@ -107,8 +107,16 @@ TARGETS += makecapk/lib/arm64-v8a/lib$(APPNAME).so
 
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp -m32
+#---------------------------------------------------------------
+#general usage
 CFLAGS_x86:=-march=i686 -mtune=generic -mssse3 -mfpmath=sse -m32
 CFLAGS_x86_64:=-march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=generic
+
+#optimized code for your computer
+#if your computer doesnt support 32 bit or 64 bit you can change march as -march=native (i suppose)
+#CFLAGS_x86 := -march=i686 -mtune=native -m32
+#CFLAGS_x86_64 := -march=x86-64 -mtune=native
+#---------------------------------------------------------------
 STOREPASS?=password
 DNAME:="CN=example.com, OU=ID, O=Example, L=Doe, S=John, C=GB"
 KEYSTOREFILE:=my-release-key.keystore
