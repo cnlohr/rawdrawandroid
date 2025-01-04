@@ -94,7 +94,7 @@ make keystore
 make push run
 ```
 
-## Steps for GUI-less install (Windows, WSL)
+## Steps for GUI-less install (Windows, WSL) (And command-line-only-linux)
 
 If you're developing in Windows Subsystem for Linux (WSL), follow the "Steps for GUI-less install" to install the Android components from the command line, without any GUI components.
 
