@@ -67,7 +67,7 @@ This set of steps describes how to install Android Studio with NDK support in Li
 
 1) Install prerequisites:
 ```
-sudo apt install openjdk-11-jdk-headless adb
+sudo apt install openjdk-17-jdk-headless adb
 ```
 2) Download Android Studio: https://developer.android.com/studio
 3) Start 'studio.sh' in android-studio/bin
