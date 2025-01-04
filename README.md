@@ -133,6 +133,7 @@ If you want to target Android 34 (not recommended in 2024, for device compatibil
 yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
 $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;34.0.0" "ndk;26.2.11394342" "platform-tools" "platforms;android-34" "tools" "cmake;3.10.2.4988404"
 ```
+**NOTE** You don not actually need `platforms;android-##`, if you want to avoid a 2GB download, you can omit this and once you get rawdrawandroid, you can say `make android-##.jar` to download just the jar file (that's all you need).  (Where ## is the android version number)
 
 **NOTE** If you are upgrading NDK versions, you may need to remove old versions, this Makefile does not necessarily do the best job at auto-selecting NDK versions.
 
