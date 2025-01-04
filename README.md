@@ -8,7 +8,7 @@
   - [why?](#why)
   - [Development Environment](#development-environment)
     - [Linux install Android Studio with NDK.](#linux-install-android-studio-with-ndk)
-    - [Steps for GUI-less install (Windows, WSL)](#steps-for-gui-less-install-windows-wsl)
+    - [Steps for GUI-less install (Windows, WSL)](#steps-for-gui-less-install-windows-wsl-and-command-line-only-linux)
       - [Extra note for actually deploying to device in Windows](#extra-note-for-actually-deploying-to-device-in-windows)
       - [Rest of steps](#rest-of-steps)
   - [If you are going to use this](#if-you-are-going-to-use-this)
@@ -61,13 +61,15 @@ Most of the testing was done on Linux, however @AEFeinstein has done at least cu
 
 ## Linux install Android Studio with NDK.
 
+#### See [section below](#steps-for-gui-less-install-windows-wsl-and-command-line-only-linux) for command-line-only install.
+
 This set of steps describes how to install Android Studio with NDK support in Linux.  It uses the graphical installer and installs a lot more stuff than the instructions below.  You may be able to mix-and-match these two sets of instructions.  For instance if you are on Linux but don't want to sacrifice 6 GB of disk to the Googs.
 
 **NOTE** You probably should use the WSL instructions instead of these instructions as it will produc a more lean installation.
 
 1) Install prerequisites:
 ```
-sudo apt install openjdk-11-jdk-headless adb
+sudo apt install openjdk-17-jdk-headless adb
 ```
 2) Download Android Studio: https://developer.android.com/studio
 3) Start 'studio.sh' in android-studio/bin
@@ -92,7 +94,7 @@ make keystore
 make push run
 ```
 
-## Steps for GUI-less install (Windows, WSL)
+## Steps for GUI-less install (Windows, WSL) (And command-line-only-linux)
 
 If you're developing in Windows Subsystem for Linux (WSL), follow the "Steps for GUI-less install" to install the Android components from the command line, without any GUI components.
 
@@ -131,6 +133,7 @@ If you want to target Android 34 (not recommended in 2024, for device compatibil
 yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
 $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;34.0.0" "ndk;26.2.11394342" "platform-tools" "platforms;android-34" "tools" "cmake;3.10.2.4988404"
 ```
+**NOTE** You don not actually need `platforms;android-##`, if you want to avoid a 2GB download, you can omit this and once you get rawdrawandroid, you can say `make android-##.jar` to download just the jar file (that's all you need).  (Where ## is the android version number)
 
 **NOTE** If you are upgrading NDK versions, you may need to remove old versions, this Makefile does not necessarily do the best job at auto-selecting NDK versions.
 
@@ -268,19 +271,19 @@ Upload your APK `makecapk.apk` made with your key.
 If you are using **Android 29 or older**, do this.
 ```
 yes | $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-$ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;29.0.3" "cmake;3.10.2.4988404" "ndk;21.1.6352462" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
+$ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;29.0.3" "cmake;3.10.2.4988404" "ndk;21.1.6352462" "platform-tools" "platforms;android-29" "tools"
 ```
 
 If your platform command-line tools are **30**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following:
 ```
 yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "platform-tools" "platforms;android-30" "tools"
 ```
 
 If your platform command-line tools are **32**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following (This appears to be backwards compatbile to some degree with Android 30):
 ```
 yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;32.0.0" "cmake;3.22.1" "ndk;25.1.8937393" "platforms;android-32" "patcher;v4" "platform-tools" "tools"
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;32.0.0" "cmake;3.22.1" "ndk;25.1.8937393" "platforms;android-32" "platform-tools" "tools"
 ```
 
 

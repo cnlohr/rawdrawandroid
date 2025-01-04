@@ -80,6 +80,15 @@ ifeq ($(BUILD_TOOLS),)
 $(error BUILD_TOOLS directory not found)
 endif
 
+ifneq ("$(wildcard ./android-$(ANDROIDVERSION).jar)","")
+ANDROID_JAR:=android-$(ANDROIDVERSION).jar
+else
+ANDROID_JAR:=$(ANDROIDSDK)/platforms/android-$(ANDROIDVERSION)/android.jar
+endif
+
+android-$(ANDROIDVERSION).jar :
+	wget https://github.com/Sable/android-platforms/raw/refs/heads/master/android-$(ANDROIDVERSION)/android.jar -O android-$(ANDROIDVERSION).jar
+
 testsdk :
 	@echo "SDK:\t\t" $(ANDROIDSDK)
 	@echo "NDK:\t\t" $(NDK)
@@ -156,7 +165,7 @@ makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml
 	mkdir -p makecapk/assets
 	cp -r Sources/assets/* makecapk/assets
 	rm -rf temp.apk
-	$(AAPT) package -f -F temp.apk -I $(ANDROIDSDK)/platforms/android-$(ANDROIDVERSION)/android.jar -M AndroidManifest.xml -S Sources/res -A makecapk/assets -v --target-sdk-version $(ANDROIDTARGET)
+	$(AAPT) package -f -F temp.apk -I $(ANDROID_JAR) -M AndroidManifest.xml -S Sources/res -A makecapk/assets -v --target-sdk-version $(ANDROIDTARGET)
 	unzip -o temp.apk -d makecapk
 	rm -rf makecapk.apk
 	# We use -4 here for the compression ratio, as it's a good balance of speed and size. -9 will make a slightly smaller executable but takes longer to build
