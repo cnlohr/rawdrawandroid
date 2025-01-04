@@ -268,19 +268,19 @@ Upload your APK `makecapk.apk` made with your key.
 If you are using **Android 29 or older**, do this.
 ```
 yes | $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-$ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;29.0.3" "cmake;3.10.2.4988404" "ndk;21.1.6352462" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
+$ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;29.0.3" "cmake;3.10.2.4988404" "ndk;21.1.6352462" "platform-tools" "platforms;android-30" "tools"
 ```
 
 If your platform command-line tools are **30**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following:
 ```
 yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "patcher;v4" "platform-tools" "platforms;android-30" "tools"
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;30.0.2" "cmake;3.10.2.4988404" "ndk;21.3.6528147" "platform-tools" "platforms;android-30" "tools"
 ```
 
 If your platform command-line tools are **32**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following (This appears to be backwards compatbile to some degree with Android 30):
 ```
 yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;32.0.0" "cmake;3.22.1" "ndk;25.1.8937393" "platforms;android-32" "patcher;v4" "platform-tools" "tools"
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;32.0.0" "cmake;3.22.1" "ndk;25.1.8937393" "platforms;android-32" "platform-tools" "tools"
 ```
 
 
