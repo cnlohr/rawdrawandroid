@@ -61,6 +61,8 @@ Most of the testing was done on Linux, however @AEFeinstein has done at least cu
 
 ## Linux install Android Studio with NDK.
 
+#### See [section below](#steps-for-gui-less-install-windows-wsl) for command-line-only install.
+
 This set of steps describes how to install Android Studio with NDK support in Linux.  It uses the graphical installer and installs a lot more stuff than the instructions below.  You may be able to mix-and-match these two sets of instructions.  For instance if you are on Linux but don't want to sacrifice 6 GB of disk to the Googs.
 
 **NOTE** You probably should use the WSL instructions instead of these instructions as it will produc a more lean installation.
