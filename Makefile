@@ -116,8 +116,8 @@ TARGETS += makecapk/lib/arm64-v8a/lib$(APPNAME).so
 
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp -m32
-CFLAGS_x86:=-march=i686 -mtune=intel -mssse3 -mfpmath=sse -m32
-CFLAGS_x86_64:=-march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=intel
+CFLAGS_x86:=-march=i686 -mssse3 -mfpmath=sse -m32
+CFLAGS_x86_64:=-march=x86-64 -msse4.2 -mpopcnt -m64
 STOREPASS?=password
 DNAME:="CN=example.com, OU=ID, O=Example, L=Doe, S=John, C=GB"
 KEYSTOREFILE:=my-release-key.keystore
@@ -185,7 +185,7 @@ manifest: AndroidManifest.xml
 AndroidManifest.xml :
 	rm -rf AndroidManifest.xml
 	PACKAGENAME=$(PACKAGENAME) \
-		ANDROIDVERSION=$(ANDROIDVERSION) \
+		ANDROIDVERSION=22 \
 		ANDROIDTARGET=$(ANDROIDTARGET) \
 		APPNAME=$(APPNAME) \
 		LABEL=$(LABEL) envsubst '$$ANDROIDTARGET $$ANDROIDVERSION $$APPNAME $$PACKAGENAME $$LABEL' \
