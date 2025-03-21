@@ -93,6 +93,17 @@ make keystore
 ```
 make push run
 ```
+## Steps for debugging with lldb
+This is 2 step process. First copy lldb-server binary to mobile and then from the host machine connect to the server
+
+### copy lldb-server to mobile and make it listen 
+$ adb push ~/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/aarch64/lldb-server /sdcard
+$ adb shell run-as org.yourorg.cnfgtest cp /sdcard/lldb-server /data/data/org.yourorg.cnfgtest/
+$ adb shell run-as org.yourorg.cnfgtest chmod +x /data/data/org.yourorg.cnfgtest/lldb-server
+$ adb shell 'run-as org.yourorg.cnfgtest /data/data/org.yourorg.cnfgtest/lldb-server platform --listen *:1234 --server
+
+### connect to lldb-server and debug
+$ ~/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/linux-x86_64/bin/lldb.sh -o 'platform select remote-android' -o 'platform connect  connect://192.168.1.189:1234'
 
 ## Steps for GUI-less install (Windows, WSL) (And command-line-only-linux)
 
