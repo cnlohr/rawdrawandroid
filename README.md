@@ -105,7 +105,10 @@ $ adb shell 'run-as org.yourorg.cnfgtest /data/data/org.yourorg.cnfgtest/lldb-se
 ```
 ### connect to lldb-server and debug
 ```
-$ ~/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/linux-x86_64/bin/lldb.sh -o 'platform select remote-android' -o 'platform connect  connect://192.168.1.189:1234' -o "attach `adb shell pidof org.yourorg.cnfgtest`"
+$ ~/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/linux-x86_64/bin/lldb.sh \
+    -o 'platform select remote-android' \
+    -o 'platform connect  connect://192.168.1.189:1234' \
+    -o "attach `adb shell pidof org.yourorg.cnfgtest`"
 ```
 ## Steps for GUI-less install (Windows, WSL) (And command-line-only-linux)
 
