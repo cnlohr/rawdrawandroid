@@ -459,7 +459,7 @@ void * JavscriptThread( void * v )
 			env->DeleteLocalRef( envptr, clazzz );
 		}
 
-		if( strcmp( name, "z5" ) == 0 || strcmp( name, "g5" ) == 0 )
+		if( strcmp( name, "z5" ) == 0 || strcmp( name, "g5" ) == 0 || strcmp( name, "iq" ) == 0 )
 		{
 			// Special, Some Androids (notably Meta Quest) use a different private message type.
 			jfieldID mstrf  = env->GetFieldID( envptr, innerClass, "a", "[B" );
