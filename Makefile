@@ -15,10 +15,10 @@ RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
 
-#We've tested it with android version 22, 24, 28, 29 and 30 and 32.
+#We've tested it with android version 22, 24, 28, 29, 30, 32 and 34.
 #You can target something like Android 28, but if you set ANDROIDVERSION to say 22, then
-#Your app should (though not necessarily) support all the way back to Android 22. 
-ANDROIDVERSION?=30
+#Your app should (though not necessarily) support all the way back to Android 22.
+ANDROIDVERSION?=34
 ANDROIDTARGET?=$(ANDROIDVERSION)
 CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
 LDFLAGS?=-Wl,--gc-sections -Wl,-Map=output.map -s
@@ -41,7 +41,7 @@ UNAME := $(shell uname)
 
 ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
 
-#if you have a custom Android Home location you can add it to this list.  
+#if you have a custom Android Home location you can add it to this list.
 #This makefile will select the first present folder.
 
 
@@ -159,7 +159,15 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 #(zipalign -c -v 8 makecapk.apk)||true #This seems to not work well.
 #jarsigner -verify -verbose -certs makecapk.apk
 
-
+# help/doc:
+# All .apk's that are produced:
+#
+# temp.apk
+# 	Contains android jar file, res, and assets
+# makecapk.apk
+#	temp.apk + resources.arsc(compressed res) + Manifest, all compressed
+# $(APKFILE)
+# 	zipalign'ed and signed makecapk.apk
 
 makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml
 	mkdir -p makecapk/assets
@@ -192,7 +200,7 @@ AndroidManifest.xml :
 		< AndroidManifest.xml.template > AndroidManifest.xml
 
 
-uninstall : 
+uninstall :
 	($(ADB) uninstall $(PACKAGENAME))||true
 
 push : makecapk.apk
@@ -205,4 +213,3 @@ run : push
 
 clean :
 	rm -rf AndroidManifest.xml temp.apk makecapk.apk makecapk $(APKFILE)
-
