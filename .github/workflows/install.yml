@@ -14,7 +14,7 @@ jobs:
       TMPFILE: /home/droid/temp.zip
       URL_CLITOOLS: https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: Install dependencies (apt)
