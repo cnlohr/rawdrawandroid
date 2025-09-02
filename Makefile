@@ -15,9 +15,9 @@ RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
 
-#We've tested it with android version 22, 24, 28, 29 and 30 and 32.
+#We've tested it with android version 22, 24, 28, 29, 30, 32 and 34.
 #You can target something like Android 28, but if you set ANDROIDVERSION to say 22, then
-#Your app should (though not necessarily) support all the way back to Android 22. 
+#Your app should (though not necessarily) support all the way back to Android 22.
 ANDROIDVERSION?=30
 ANDROIDTARGET?=$(ANDROIDVERSION)
 CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
@@ -41,7 +41,7 @@ UNAME := $(shell uname)
 
 ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
 
-#if you have a custom Android Home location you can add it to this list.  
+#if you have a custom Android Home location you can add it to this list.
 #This makefile will select the first present folder.
 
 
@@ -116,8 +116,8 @@ TARGETS += makecapk/lib/arm64-v8a/lib$(APPNAME).so
 
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp -m32
-CFLAGS_x86:=-march=i686 -mtune=intel -mssse3 -mfpmath=sse -m32
-CFLAGS_x86_64:=-march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=intel
+CFLAGS_x86:=-march=i686 -mssse3 -mfpmath=sse -m32
+CFLAGS_x86_64:=-march=x86-64 -msse4.2 -mpopcnt -m64
 STOREPASS?=password
 DNAME:="CN=example.com, OU=ID, O=Example, L=Doe, S=John, C=GB"
 KEYSTOREFILE:=my-release-key.keystore
@@ -159,7 +159,15 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 #(zipalign -c -v 8 makecapk.apk)||true #This seems to not work well.
 #jarsigner -verify -verbose -certs makecapk.apk
 
-
+# help/doc:
+# All .apk's that are produced:
+#
+# temp.apk
+# 	Contains android jar file, res, and assets
+# makecapk.apk
+#	temp.apk + resources.arsc(compressed res) + Manifest, all compressed
+# $(APKFILE)
+# 	zipalign'ed and signed makecapk.apk
 
 makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml
 	mkdir -p makecapk/assets
@@ -185,14 +193,14 @@ manifest: AndroidManifest.xml
 AndroidManifest.xml :
 	rm -rf AndroidManifest.xml
 	PACKAGENAME=$(PACKAGENAME) \
-		ANDROIDVERSION=$(ANDROIDVERSION) \
+		ANDROIDVERSION=22 \
 		ANDROIDTARGET=$(ANDROIDTARGET) \
 		APPNAME=$(APPNAME) \
 		LABEL=$(LABEL) envsubst '$$ANDROIDTARGET $$ANDROIDVERSION $$APPNAME $$PACKAGENAME $$LABEL' \
 		< AndroidManifest.xml.template > AndroidManifest.xml
 
 
-uninstall : 
+uninstall :
 	($(ADB) uninstall $(PACKAGENAME))||true
 
 push : makecapk.apk
@@ -205,4 +213,3 @@ run : push
 
 clean :
 	rm -rf AndroidManifest.xml temp.apk makecapk.apk makecapk $(APKFILE)
-

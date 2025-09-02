@@ -8,7 +8,7 @@
   - [why?](#why)
   - [Development Environment](#development-environment)
     - [Linux install Android Studio with NDK.](#linux-install-android-studio-with-ndk)
-    - [Steps for GUI-less install (Windows, WSL)](#steps-for-gui-less-install-windows-wsl)
+    - [Steps for GUI-less install (Windows, WSL)](#steps-for-gui-less-install-windows-wsl-and-command-line-only-linux)
       - [Extra note for actually deploying to device in Windows](#extra-note-for-actually-deploying-to-device-in-windows)
       - [Rest of steps](#rest-of-steps)
   - [If you are going to use this](#if-you-are-going-to-use-this)
@@ -61,7 +61,7 @@ Most of the testing was done on Linux, however @AEFeinstein has done at least cu
 
 ## Linux install Android Studio with NDK.
 
-#### See [section below](#steps-for-gui-less-install-windows-wsl) for command-line-only install.
+#### See [section below](#steps-for-gui-less-install-windows-wsl-and-command-line-only-linux) for command-line-only install.
 
 This set of steps describes how to install Android Studio with NDK support in Linux.  It uses the graphical installer and installs a lot more stuff than the instructions below.  You may be able to mix-and-match these two sets of instructions.  For instance if you are on Linux but don't want to sacrifice 6 GB of disk to the Googs.
 
@@ -93,8 +93,24 @@ make keystore
 ```
 make push run
 ```
+## Steps for debugging with lldb
+This is 2 step process. First copy lldb-server binary to mobile and then from the host machine connect to the server
 
-## Steps for GUI-less install (Windows, WSL)
+### copy lldb-server to mobile and make it listen 
+```
+$ adb push ~/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/aarch64/lldb-server /sdcard
+$ adb shell run-as org.yourorg.cnfgtest cp /sdcard/lldb-server /data/data/org.yourorg.cnfgtest/
+$ adb shell run-as org.yourorg.cnfgtest chmod +x /data/data/org.yourorg.cnfgtest/lldb-server
+$ adb shell 'run-as org.yourorg.cnfgtest /data/data/org.yourorg.cnfgtest/lldb-server platform --listen *:1234 --server
+```
+### connect to lldb-server and debug
+```
+$ ~/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/linux-x86_64/bin/lldb.sh \
+    -o 'platform select remote-android' \
+    -o 'platform connect  connect://192.168.1.189:1234' \
+    -o "attach `adb shell pidof org.yourorg.cnfgtest`"
+```
+## Steps for GUI-less install (Windows, WSL) (And command-line-only-linux)
 
 If you're developing in Windows Subsystem for Linux (WSL), follow the "Steps for GUI-less install" to install the Android components from the command line, without any GUI components.
 
@@ -133,6 +149,7 @@ If you want to target Android 34 (not recommended in 2024, for device compatibil
 yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
 $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;34.0.0" "ndk;26.2.11394342" "platform-tools" "platforms;android-34" "tools" "cmake;3.10.2.4988404"
 ```
+**NOTE** You don not actually need `platforms;android-##`, if you want to avoid a 2GB download, you can omit this and once you get rawdrawandroid, you can say `make android-##.jar` to download just the jar file (that's all you need).  (Where ## is the android version number)
 
 **NOTE** If you are upgrading NDK versions, you may need to remove old versions, this Makefile does not necessarily do the best job at auto-selecting NDK versions.
 
@@ -270,7 +287,7 @@ Upload your APK `makecapk.apk` made with your key.
 If you are using **Android 29 or older**, do this.
 ```
 yes | $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-$ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;29.0.3" "cmake;3.10.2.4988404" "ndk;21.1.6352462" "platform-tools" "platforms;android-30" "tools"
+$ANDROID_HOME/tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "build-tools;29.0.3" "cmake;3.10.2.4988404" "ndk;21.1.6352462" "platform-tools" "platforms;android-29" "tools"
 ```
 
 If your platform command-line tools are **30**, the command-line tools will be placed in the cmdline-tools folder. So, you will need to execute the following:
