@@ -110,9 +110,9 @@ AAPT:=$(BUILD_TOOLS)/aapt
 
 # Which binaries to build? Just comment/uncomment these lines:
 TARGETS += makecapk/lib/arm64-v8a/lib$(APPNAME).so
-#TARGETS += makecapk/lib/armeabi-v7a/lib$(APPNAME).so
-#TARGETS += makecapk/lib/x86/lib$(APPNAME).so
-#TARGETS += makecapk/lib/x86_64/lib$(APPNAME).so
+TARGETS += makecapk/lib/armeabi-v7a/lib$(APPNAME).so
+TARGETS += makecapk/lib/x86/lib$(APPNAME).so
+TARGETS += makecapk/lib/x86_64/lib$(APPNAME).so
 
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp -m32
@@ -169,7 +169,7 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 # $(APKFILE)
 # 	zipalign'ed and signed makecapk.apk
 
-makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml
+makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml $(KEYSTOREFILE)
 	mkdir -p makecapk/assets
 	cp -r Sources/assets/* makecapk/assets
 	rm -rf temp.apk
