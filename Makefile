@@ -169,7 +169,7 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 # $(APKFILE)
 # 	zipalign'ed and signed makecapk.apk
 
-makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml
+makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml $(KEYSTOREFILE)
 	mkdir -p makecapk/assets
 	cp -r Sources/assets/* makecapk/assets
 	rm -rf temp.apk
