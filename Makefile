@@ -14,6 +14,7 @@ PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
 SRC?=test.c
+BUILD_DIR?=.
 
 #We've tested it with android version 22, 24, 28, 29, 30, 32 and 34.
 #You can target something like Android 28, but if you set ANDROIDVERSION to say 22, then
@@ -109,10 +110,10 @@ CC_x86_64=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/x86_64-linux-android$(A
 AAPT:=$(BUILD_TOOLS)/aapt
 
 # Which binaries to build? Just comment/uncomment these lines:
-TARGETS += makecapk/lib/arm64-v8a/lib$(APPNAME).so
-TARGETS += makecapk/lib/armeabi-v7a/lib$(APPNAME).so
-TARGETS += makecapk/lib/x86/lib$(APPNAME).so
-TARGETS += makecapk/lib/x86_64/lib$(APPNAME).so
+TARGETS += $(BUILD_DIR)/makecapk/lib/arm64-v8a/lib$(APPNAME).so
+TARGETS += $(BUILD_DIR)/makecapk/lib/armeabi-v7a/lib$(APPNAME).so
+TARGETS += $(BUILD_DIR)/makecapk/lib/x86/lib$(APPNAME).so
+TARGETS += $(BUILD_DIR)/makecapk/lib/x86_64/lib$(APPNAME).so
 
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp -m32
@@ -129,25 +130,25 @@ $(KEYSTOREFILE) :
 	keytool -genkey -v -keystore $(KEYSTOREFILE) -alias $(ALIASNAME) -keyalg RSA -keysize 2048 -validity 10000 -storepass $(STOREPASS) -keypass $(STOREPASS) -dname $(DNAME)
 
 folders:
-	mkdir -p makecapk/lib/arm64-v8a
-	mkdir -p makecapk/lib/armeabi-v7a
-	mkdir -p makecapk/lib/x86
-	mkdir -p makecapk/lib/x86_64
+	mkdir -p $(BUILD_DIR)/makecapk/lib/arm64-v8a
+	mkdir -p $(BUILD_DIR)/makecapk/lib/armeabi-v7a
+	mkdir -p $(BUILD_DIR)/makecapk/lib/x86
+	mkdir -p $(BUILD_DIR)/makecapk/lib/x86_64
 
-makecapk/lib/arm64-v8a/lib$(APPNAME).so : $(ANDROIDSRCS)
-	mkdir -p makecapk/lib/arm64-v8a
+$(BUILD_DIR)/makecapk/lib/arm64-v8a/lib$(APPNAME).so : $(ANDROIDSRCS)
+	mkdir -p $(BUILD_DIR)/makecapk/lib/arm64-v8a
 	$(CC_ARM64) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
-makecapk/lib/armeabi-v7a/lib$(APPNAME).so : $(ANDROIDSRCS)
-	mkdir -p makecapk/lib/armeabi-v7a
+$(BUILD_DIR)/makecapk/lib/armeabi-v7a/lib$(APPNAME).so : $(ANDROIDSRCS)
+	mkdir -p $(BUILD_DIR)/makecapk/lib/armeabi-v7a
 	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM32) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/arm-linux-androideabi/$(ANDROIDVERSION) $(LDFLAGS)
 
-makecapk/lib/x86/lib$(APPNAME).so : $(ANDROIDSRCS)
-	mkdir -p makecapk/lib/x86
+$(BUILD_DIR)/makecapk/lib/x86/lib$(APPNAME).so : $(ANDROIDSRCS)
+	mkdir -p $(BUILD_DIR)/makecapk/lib/x86
 	$(CC_x86) $(CFLAGS) $(CFLAGS_x86) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/i686-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
-makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
-	mkdir -p makecapk/lib/x86_64
+$(BUILD_DIR)/makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
+	mkdir -p $(BUILD_DIR)/makecapk/lib/x86_64
 	$(CC_x86) $(CFLAGS) $(CFLAGS_x86_64) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/x86_64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
 #We're really cutting corners.  You should probably use resource files.. Replace android:label="@string/app_name" and add a resource file.
@@ -170,23 +171,23 @@ makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 # 	zipalign'ed and signed makecapk.apk
 
 makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml $(KEYSTOREFILE)
-	mkdir -p makecapk/assets
-	cp -r Sources/assets/* makecapk/assets
-	rm -rf temp.apk
-	$(AAPT) package -f -F temp.apk -I $(ANDROID_JAR) -M AndroidManifest.xml -S Sources/res -A makecapk/assets -v --target-sdk-version $(ANDROIDTARGET)
-	unzip -o temp.apk -d makecapk
-	rm -rf makecapk.apk
+	mkdir -p $(BUILD_DIR)/makecapk/assets
+	cp -r Sources/assets/* $(BUILD_DIR)/makecapk/assets
+	rm -rf $(BUILD_DIR)/temp.apk
+	$(AAPT) package -f -F $(BUILD_DIR)/temp.apk -I $(ANDROID_JAR) -M AndroidManifest.xml -S Sources/res -A $(BUILD_DIR)/makecapk/assets -v --target-sdk-version $(ANDROIDTARGET)
+	unzip -o $(BUILD_DIR)/temp.apk -d $(BUILD_DIR)/makecapk
+	rm -rf $(BUILD_DIR)/makecapk.apk
 	# We use -4 here for the compression ratio, as it's a good balance of speed and size. -9 will make a slightly smaller executable but takes longer to build
-	cd makecapk && zip -D4r ../makecapk.apk . && zip -D0r ../makecapk.apk ./resources.arsc ./AndroidManifest.xml
+	cd $(BUILD_DIR)/makecapk && zip -D4r ../makecapk.apk . && zip -D0r ../makecapk.apk ./resources.arsc ./AndroidManifest.xml
 	# jarsigner is only necessary when targetting Android < 7.0
-	#jarsigner -sigalg SHA1withRSA -digestalg SHA1 -verbose -keystore $(KEYSTOREFILE) -storepass $(STOREPASS) makecapk.apk $(ALIASNAME)
-	rm -rf $(APKFILE)
-	$(BUILD_TOOLS)/zipalign -v 4 makecapk.apk $(APKFILE)
+	#jarsigner -sigalg SHA1withRSA -digestalg SHA1 -verbose -keystore $(KEYSTOREFILE) -storepass $(STOREPASS) $(BUILD_DIR)/makecapk.apk $(ALIASNAME)
+	rm -rf $(BUILD_DIR)/$(APKFILE)
+	$(BUILD_TOOLS)/zipalign -v 4 $(BUILD_DIR)/makecapk.apk $(BUILD_DIR)/$(APKFILE)
 	#Using the apksigner in this way is only required on Android 30+
-	$(BUILD_TOOLS)/apksigner sign --key-pass pass:$(STOREPASS) --ks-pass pass:$(STOREPASS) --ks $(KEYSTOREFILE) $(APKFILE)
-	rm -rf temp.apk
-	rm -rf makecapk.apk
-	@ls -l $(APKFILE)
+	$(BUILD_TOOLS)/apksigner sign --key-pass pass:$(STOREPASS) --ks-pass pass:$(STOREPASS) --ks $(KEYSTOREFILE) $(BUILD_DIR)/$(APKFILE)
+	rm -rf $(BUILD_DIR)/temp.apk
+	rm -rf $(BUILD_DIR)/makecapk.apk
+	@ls -l $(BUILD_DIR)/$(APKFILE)
 
 manifest: AndroidManifest.xml
 
@@ -205,11 +206,11 @@ uninstall :
 
 push : makecapk.apk
 	@echo "Installing" $(PACKAGENAME)
-	$(ADB) install -r $(APKFILE)
+	$(ADB) install -r $(BUILD_DIR)/$(APKFILE)
 
 run : push
-	$(eval ACTIVITYNAME:=$(shell $(AAPT) dump badging $(APKFILE) | grep "launchable-activity" | cut -f 2 -d"'"))
+	$(eval ACTIVITYNAME:=$(shell $(AAPT) dump badging $(BUILD_DIR)/$(APKFILE) | grep "launchable-activity" | cut -f 2 -d"'"))
 	$(ADB) shell am start -n $(PACKAGENAME)/$(ACTIVITYNAME)
 
 clean :
-	rm -rf AndroidManifest.xml temp.apk makecapk.apk makecapk $(APKFILE)
+	rm -rf AndroidManifest.xml $(BUILD_DIR)/temp.apk $(BUILD_DIR)/makecapk.apk $(BUILD_DIR)/makecapk $(BUILD_DIR)/$(APKFILE)
