@@ -22,7 +22,7 @@ BUILD_DIR?=.
 ANDROIDVERSION?=30
 ANDROIDTARGET?=$(ANDROIDVERSION)
 CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
-LDFLAGS?=-Wl,--gc-sections -Wl,-Map=output.map -s
+LDFLAGS?=-Wl,--gc-sections -Wl,-Map=$(BUILD_DIR)/output.map -s
 ANDROID_FULLSCREEN?=y
 ADB?=adb
 UNAME := $(shell uname)
@@ -170,11 +170,11 @@ $(BUILD_DIR)/makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 # $(APKFILE)
 # 	zipalign'ed and signed makecapk.apk
 
-makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml $(KEYSTOREFILE)
+makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) $(BUILD_DIR)/AndroidManifest.xml $(KEYSTOREFILE)
 	mkdir -p $(BUILD_DIR)/makecapk/assets
 	cp -r Sources/assets/* $(BUILD_DIR)/makecapk/assets
 	rm -rf $(BUILD_DIR)/temp.apk
-	$(AAPT) package -f -F $(BUILD_DIR)/temp.apk -I $(ANDROID_JAR) -M AndroidManifest.xml -S Sources/res -A $(BUILD_DIR)/makecapk/assets -v --target-sdk-version $(ANDROIDTARGET)
+	$(AAPT) package -f -F $(BUILD_DIR)/temp.apk -I $(ANDROID_JAR) -M $(BUILD_DIR)/AndroidManifest.xml -S Sources/res -A $(BUILD_DIR)/makecapk/assets -v --target-sdk-version $(ANDROIDTARGET)
 	unzip -o $(BUILD_DIR)/temp.apk -d $(BUILD_DIR)/makecapk
 	rm -rf $(BUILD_DIR)/makecapk.apk
 	# We use -4 here for the compression ratio, as it's a good balance of speed and size. -9 will make a slightly smaller executable but takes longer to build
@@ -189,16 +189,17 @@ makecapk.apk : $(TARGETS) $(EXTRA_ASSETS_TRIGGER) AndroidManifest.xml $(KEYSTORE
 	rm -rf $(BUILD_DIR)/makecapk.apk
 	@ls -l $(BUILD_DIR)/$(APKFILE)
 
-manifest: AndroidManifest.xml
+manifest: $(BUILD_DIR)/AndroidManifest.xml
 
-AndroidManifest.xml :
-	rm -rf AndroidManifest.xml
+$(BUILD_DIR)/AndroidManifest.xml :
+	mkdir -p $(BUILD_DIR)
+	rm -rf $(BUILD_DIR)/AndroidManifest.xml
 	PACKAGENAME=$(PACKAGENAME) \
 		ANDROIDVERSION=22 \
 		ANDROIDTARGET=$(ANDROIDTARGET) \
 		APPNAME=$(APPNAME) \
 		LABEL=$(LABEL) envsubst '$$ANDROIDTARGET $$ANDROIDVERSION $$APPNAME $$PACKAGENAME $$LABEL' \
-		< AndroidManifest.xml.template > AndroidManifest.xml
+		< AndroidManifest.xml.template > $(BUILD_DIR)/AndroidManifest.xml
 
 
 uninstall :
@@ -213,4 +214,4 @@ run : push
 	$(ADB) shell am start -n $(PACKAGENAME)/$(ACTIVITYNAME)
 
 clean :
-	rm -rf AndroidManifest.xml $(BUILD_DIR)/temp.apk $(BUILD_DIR)/makecapk.apk $(BUILD_DIR)/makecapk $(BUILD_DIR)/$(APKFILE)
+	rm -rf $(BUILD_DIR)/AndroidManifest.xml $(BUILD_DIR)/temp.apk $(BUILD_DIR)/makecapk.apk $(BUILD_DIR)/makecapk $(BUILD_DIR)/$(APKFILE)
