@@ -481,6 +481,11 @@ void * JavscriptThread( void * v )
 		}
 		else
 		{
+#if 0
+			// I no longer know the name of this, but it's older systems.
+			// some new systems have different rules.  When you hit that, it shouldn't crash at least.
+
+
 			jobject MessagePayload = env->GetObjectField( envptr, innerObj, pairfirst );
 			// MessagePayload is a org.chromium.content_public.browser.MessagePayload
 
@@ -498,6 +503,8 @@ void * JavscriptThread( void * v )
 			env->DeleteLocalRef( envptr, strObjDescr );
 			env->DeleteLocalRef( envptr, MessagePayload );
 			env->DeleteLocalRef( envptr, mpclass );
+#endif
+			snprintf( fromJSBuffer, "Unknown string type: %s (open a PR)\n", name );
 		}
 		env->ReleaseStringUTFChars(envptr, strObj, name);
 		env->DeleteLocalRef( envptr, strObj );
