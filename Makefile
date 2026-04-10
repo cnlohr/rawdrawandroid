@@ -35,11 +35,6 @@ LDFLAGS += -s
 # LDFLAGS += -static-libstdc++
 # $(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/libc.a
 
-ANDROID_FULLSCREEN?=y
-ADB?=adb
-UNAME := $(shell uname)
-
-
 ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
 
 #if you have a custom Android Home location you can add it to this list.
