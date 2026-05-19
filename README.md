@@ -129,7 +129,9 @@ In order to push the APK to your phone, you need `adb` installed in Windows as w
 sudo apt install openjdk-17-jdk-headless adb unzip zip
 ```
 (openjdk-25-jdk-headless works as well)
+
 3. Download "Command line tools only": https://developer.android.com/studio#downloads - you can get a URL and use `wget` in WSL to download the tools by clicking on the **"Linux"** toolset, then right-clicking on the accept link and saying copy link to location.  Then you can say `wget <link>` in WSL.
+
 4. Create a folder for the Android SDK and export it. You may want to add that export to your `~/.bashrc`:
 ```
 mkdir ~/android-sdk
@@ -137,6 +139,7 @@ export ANDROID_HOME=~/android-sdk
 printf "\nexport ANDROID_HOME=~/android-sdk\n" >> ~/.bashrc
 ```
 5. Unzip the "Command line tools only" file so that `tools` is in your brand new `android-sdk` folder.
+
 6. Install the SDK and NDK components:
 
 For earler versions of tools see note for pre-SDK-32-Tools.
@@ -161,7 +164,7 @@ You can see all avialable versions of software with this command:
 $ANDROID_HOME/cmdline-tools/bin/sdkmanager --list --sdk_root=${ANDROID_HOME}
 ```
 
-6. Install the Windows ADB toolset.
+7. Install the Windows ADB toolset.
 ```
 mkdir -p $ANDROID_HOME/windows
 cd $ANDROID_HOME/windows
@@ -173,20 +176,20 @@ printf "\nexport ADB=$ANDROID_HOME/windows/platform-tools/adb.exe\n" >> ~/.bashr
 
 Alternatively, you may want to use https://dl.google.com/android/repository/platform-tools_r30.0.5-windows.zip for r30.
 
-6. NOTE: because of updates to environment variables, you may want to close and re-open your WSL terminal.
-7. Download this repo
+8. NOTE: because of updates to environment variables, you may want to close and re-open your WSL terminal.
+9. Download this repo
 ```
 git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules
 cd rawdrawandroid
 ```
-8. Turn on developer mode on your phone (will vary depending on android version)
-9. Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
-10. Plug your phone into the computer.
-11. Make your keystore.
+10. Turn on developer mode on your phone (will vary depending on android version)
+11. Go into developer options on your phone and enable "USB debugging" make sure to select always allow.
+12. Plug your phone into the computer.
+13. Make your keystore.
 ```
 make keystore
 ```
-12. Compile and run your program.
+14. Compile and run your program.
 ```
 make run
 ```
