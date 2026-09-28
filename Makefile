@@ -35,16 +35,7 @@ LDFLAGS += -s
 # LDFLAGS += -static-libstdc++
 # $(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/libc.a
 
-ANDROID_FULLSCREEN?=y
-ADB?=adb
-UNAME := $(shell uname)
-
-
 ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
-
-#if you have a custom Android Home location you can add it to this list.
-#This makefile will select the first present folder.
-
 
 ifeq ($(UNAME), Linux)
 OS_NAME = linux-x86_64
@@ -57,6 +48,7 @@ OS_NAME = windows-x86_64
 endif
 
 # Search list for where to try to find the SDK
+# If you have a custom Android Home location you can add it to this list.
 SDK_LOCATIONS += $(ANDROID_HOME) $(ANDROID_SDK_ROOT) ~/Android/Sdk $(HOME)/Library/Android/sdk
 
 #Just a little Makefile witchcraft to find the first SDK_LOCATION that exists
